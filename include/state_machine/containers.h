@@ -81,6 +81,29 @@ struct filter_impl<Pred, L<Rs...>> : L<Rs...> {};
 template <template <class> class Pred, class L>
 using filter = typename detail::filter_impl_input<Pred, L>::type;
 
+namespace detail {
+
+template <template <class> class Func, class L> struct map_impl_input;
+template <template <class> class Func, class L, class... Ts> struct map_impl;
+
+template <template <class> class Func, template <class...> class L, class... Ts>
+struct map_impl_input<Func, L<Ts...>> : map_impl<Func, L<>, Ts...> {};
+
+template <template <class> class Func, template <class...> class L, class... Rs,
+          class T, class... Ts>
+struct map_impl<Func, L<Rs...>, T, Ts...>
+    : map_impl<Func, L<Rs..., typename Func<T>::type>, Ts...> {};
+
+template <template <class> class Func, template <class...> class L, class... Rs>
+struct map_impl<Func, L<Rs...>> : L<Rs...> {};
+
+} // namespace detail
+
+// Given L<Ts...>, return L<Rs...> where Rs... are the elements of Ts... after
+// applying Func
+template <template <class> class Func, class L>
+using map = typename detail::map_impl_input<Func, L>::type;
+
 } // namespace op
 } // namespace containers
 } // namespace state_machine

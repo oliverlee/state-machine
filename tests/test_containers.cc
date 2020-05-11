@@ -68,3 +68,16 @@ TEST(containers, filter) {
     static_assert(
         std::is_same<Expected, op::filter<std::is_integral, Input>>::value, "");
 }
+
+namespace {
+
+template <class T> struct get_first { using type = typename T::first_type; };
+
+} // namespace
+
+TEST(containers, map) {
+    using Input = list<std::pair<char, int>, std::pair<float, double>>;
+    using Expected = list<char, float>;
+
+    static_assert(std::is_same<Expected, op::map<get_first, Input>>::value, "");
+}
