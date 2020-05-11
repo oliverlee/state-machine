@@ -32,6 +32,31 @@ template <class K, class... Ts> struct contains_impl {
 template <class K, class L>
 using contains = typename detail::contains_impl<K, L>::type;
 
+namespace detail {
+
+template <class L> struct make_unique_impl_input;
+template <class L, class... Ts> struct make_unique_impl;
+
+template <template <class...> class L, class... Ts>
+struct make_unique_impl_input<L<Ts...>> : make_unique_impl<L<>, Ts...> {};
+
+template <template <class...> class L, class... Rs, class T, class... Ts>
+struct make_unique_impl<L<Rs...>, T, Ts...>
+    : std::conditional_t<contains<T, L<Rs...>>::value,
+                         make_unique_impl<L<Rs...>, Ts...>,
+                         make_unique_impl<L<Rs..., T>, Ts...>> {};
+
+template <template <class...> class L, class... Rs>
+struct make_unique_impl<L<Rs...>> {
+    using type = L<Rs...>;
+};
+
+} // namespace detail
+
+// Given L<Ts...>, return L<Rs...> where Rs... are the unique elements of Ts...
+template <class L>
+using make_unique = typename detail::make_unique_impl_input<L>::type;
+
 } // namespace op
 } // namespace containers
 } // namespace state_machine

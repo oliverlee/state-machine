@@ -27,3 +27,23 @@ TEST(containers, contains) {
     static_assert(op::contains<A, list<A>>::value, "");
     static_assert(!op::contains<A, list<B>>::value, "");
 }
+
+TEST(containers, make_unique) {
+    static_assert(std::is_same<list<A, B>, op::make_unique<list<A, B>>>::value,
+                  "");
+    static_assert(
+        std::is_same<list<A, B>, op::make_unique<list<A, A, B, B>>>::value, "");
+
+    static_assert(
+        std::is_same<inheritor<A, B>, op::make_unique<inheritor<A, B>>>::value,
+        "");
+    static_assert(std::is_same<inheritor<A, B>,
+                               op::make_unique<inheritor<A, A, B, B>>>::value,
+                  "");
+
+    static_assert(
+        !std::is_same<list<A, B>, op::make_unique<inheritor<A, B>>>::value, "");
+    static_assert(!std::is_same<list<A, B>,
+                                op::make_unique<inheritor<A, A, B, B>>>::value,
+                  "");
+}
