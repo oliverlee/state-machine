@@ -20,3 +20,6 @@ package_add_test(test_backport
 
 package_add_test(test_traits
     test_traits.cc)
+
+package_add_test(test_containers
+    test_containers.cc)

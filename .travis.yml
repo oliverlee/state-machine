@@ -17,7 +17,7 @@ matrix:
     fast_finish: true
 
 script:
-  - clang-format -i include/*.h include/*/*.h examples/*.cc tests/*.cc && git diff-index --quiet HEAD
+  - clang-format -i include/**/*.h examples/*.cc tests/*.cc && git diff-index --quiet HEAD
   - mkdir -p build
   - cd build
   - cmake ..
