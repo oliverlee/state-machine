@@ -35,13 +35,15 @@ struct get_second {
 
 template <class... Ts>
 struct surjection : inheritor<Ts...> {
-    static_assert(conjunction<is_specialization_of<std::pair, Ts>...>::value, "");
+    static_assert(conjunction<is_specialization_of<std::pair, Ts>...>::value,
+                  "A mapping must be composed of elements of type `std::pair`.");
 
     using type = surjection<Ts...>;
     using keys = map<detail::get_first, list<Ts...>>;
     using values = make_unique<map<detail::get_second, list<Ts...>>>;
 
-    static_assert(std::is_same<keys, make_unique<keys>>::value, "");
+    static_assert(std::is_same<keys, make_unique<keys>>::value,
+                  "A mapping cannot contain duplicate keys.");
 
     template <class, class Default>
     static constexpr auto at_key_impl(...) -> Default;
@@ -54,7 +56,28 @@ struct surjection : inheritor<Ts...> {
 
     template<class Key>
     using contains_key = negation<std::is_same<void, at_key<Key>>>;
+};
 
+template <class... Ts>
+struct bijection : surjection <Ts...> {
+    using type = bijection<Ts...>;
+    using keys = map<detail::get_first, list<Ts...>>;
+    using values = map<detail::get_second, list<Ts...>>;
+
+    static_assert(std::is_same<values, make_unique<values>>::value,
+                  "A bijection cannot contain duplicate values.");
+
+   template <class, class Default>
+   static constexpr auto at_value_impl(...) -> Default;
+
+   template <class Value, class, class Key>
+   static constexpr auto at_value_impl(std::pair<Key, Value>*) -> Key;
+
+   template<class Value, class Default = void>
+   using at_value = decltype(at_value_impl<Value, Default>(std::declval<inheritor<Ts...>*>()));
+
+   template<class Value>
+   using contains_value = negation<std::is_same<void, at_value<Value>>>;
 };
 
 }

@@ -4,6 +4,7 @@
 #include <type_traits>
 
 namespace {
+using state_machine::containers::bijection;
 using state_machine::containers::identity;
 using state_machine::containers::inheritor;
 using state_machine::containers::list;
@@ -158,4 +159,84 @@ TEST(containers_surjection, contains_key) {
     static_assert(S1::contains_key<std::integral_constant<int, 3>>::value, "");
     static_assert(S1::contains_key<std::integral_constant<int, 4>>::value, "");
     static_assert(!S1::contains_key<std::integral_constant<int, 5>>::value, "");
+}
+
+namespace {
+
+using B0 = bijection<
+    std::pair<std::integral_constant<int, 0>, std::integral_constant<int, 0>>,
+    std::pair<std::integral_constant<int, 1>, std::integral_constant<int, 1>>,
+    std::pair<std::integral_constant<int, 2>, std::integral_constant<int, 2>>,
+    std::pair<std::integral_constant<int, 3>, std::integral_constant<int, 3>>,
+    std::pair<std::integral_constant<int, 4>, std::integral_constant<int, 4>>>;
+} // namespace
+
+TEST(containers_bijection, at_key) {
+
+    static_assert(std::is_same<B0::at_key<std::integral_constant<int, 0>>,
+                               std::integral_constant<int, 0>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_key<std::integral_constant<int, 1>>,
+                               std::integral_constant<int, 1>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_key<std::integral_constant<int, 2>>,
+                               std::integral_constant<int, 2>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_key<std::integral_constant<int, 3>>,
+                               std::integral_constant<int, 3>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_key<std::integral_constant<int, 4>>,
+                               std::integral_constant<int, 4>>::value,
+                  "");
+    static_assert(
+        std::is_same<B0::at_key<std::integral_constant<int, 5>>, void>::value,
+        "");
+}
+
+TEST(containers_bijection, contains_key) {
+
+    static_assert(B0::contains_key<std::integral_constant<int, 0>>::value, "");
+    static_assert(B0::contains_key<std::integral_constant<int, 1>>::value, "");
+    static_assert(B0::contains_key<std::integral_constant<int, 2>>::value, "");
+    static_assert(B0::contains_key<std::integral_constant<int, 3>>::value, "");
+    static_assert(B0::contains_key<std::integral_constant<int, 4>>::value, "");
+    static_assert(!B0::contains_key<std::integral_constant<int, 5>>::value, "");
+}
+
+TEST(containers_bijection, at_value) {
+
+    static_assert(std::is_same<B0::at_value<std::integral_constant<int, 0>>,
+                               std::integral_constant<int, 0>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_value<std::integral_constant<int, 1>>,
+                               std::integral_constant<int, 1>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_value<std::integral_constant<int, 2>>,
+                               std::integral_constant<int, 2>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_value<std::integral_constant<int, 3>>,
+                               std::integral_constant<int, 3>>::value,
+                  "");
+    static_assert(std::is_same<B0::at_value<std::integral_constant<int, 4>>,
+                               std::integral_constant<int, 4>>::value,
+                  "");
+    static_assert(
+        std::is_same<B0::at_value<std::integral_constant<int, 5>>, void>::value,
+        "");
+}
+
+TEST(containers_bijection, contains_value) {
+
+    static_assert(B0::contains_value<std::integral_constant<int, 0>>::value,
+                  "");
+    static_assert(B0::contains_value<std::integral_constant<int, 1>>::value,
+                  "");
+    static_assert(B0::contains_value<std::integral_constant<int, 2>>::value,
+                  "");
+    static_assert(B0::contains_value<std::integral_constant<int, 3>>::value,
+                  "");
+    static_assert(B0::contains_value<std::integral_constant<int, 4>>::value,
+                  "");
+    static_assert(!B0::contains_value<std::integral_constant<int, 5>>::value,
+                  "");
 }
