@@ -22,6 +22,6 @@ struct inheritor : Ts... {
     using type = inheritor;
 };
 
-}
+} // namespace basic
 } // namespace containers
 } // namespace state_machine
