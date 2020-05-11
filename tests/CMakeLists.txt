@@ -10,8 +10,9 @@ macro(package_add_test TESTNAME)
     set_target_properties(${TESTNAME}
         PROPERTIES FOLDER tests)
     target_include_directories(${TESTNAME}
-        PUBLIC
-        ${PROJECT_SOURCE_DIR}/include)
+        PUBLIC ${PROJECT_SOURCE_DIR}/include)
+    target_compile_options(${TESTNAME}
+        PRIVATE ${DEFAULT_CXX_OPTIONS})
 endmacro()
 
 package_add_test(test_backport
