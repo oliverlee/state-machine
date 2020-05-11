@@ -47,3 +47,24 @@ TEST(containers, make_unique) {
                                 op::make_unique<inheritor<A, A, B, B>>>::value,
                   "");
 }
+
+TEST(containers, filter) {
+    static_assert(std::is_integral<bool>::value, "");
+    static_assert(std::is_integral<int>::value, "");
+    static_assert(!std::is_integral<float>::value, "");
+    static_assert(!std::is_integral<double>::value, "");
+
+    static_assert(
+        std::is_same<list<>, op::filter<std::is_integral, list<>>>::value, "");
+    static_assert(
+        std::is_same<list<int>, op::filter<std::is_integral, list<int>>>::value,
+        "");
+    static_assert(
+        std::is_same<list<>, op::filter<std::is_integral, list<double>>>::value,
+        "");
+
+    using Input = list<bool, int, float, double>;
+    using Expected = list<bool, int>;
+    static_assert(
+        std::is_same<Expected, op::filter<std::is_integral, Input>>::value, "");
+}
