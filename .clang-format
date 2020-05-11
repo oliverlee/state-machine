@@ -1,4 +1,42 @@
+﻿---
 BasedOnStyle: LLVM
-IndentWidth: 4
-DerivePointerAlignment: false
+AllowShortFunctionsOnASingleLine: Inline
+# AllowShortIfStatementsOnASingleLine: Never
+# AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: 'true'
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: 'false'
+AlwaysBreakTemplateDeclarations: 'Yes'
+BinPackArguments: 'false'
+BinPackParameters: 'false'
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: 'false'
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+BreakStringLiterals: 'true'
+CompactNamespaces: 'false'
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+Cpp11BracedListStyle: 'true'
+DerivePointerAlignment: 'false'
+FixNamespaceComments: 'true'
+IncludeBlocks: Regroup
+IndentWidth: '4'
+Language: Cpp
+MaxEmptyLinesToKeep: '2'
+NamespaceIndentation: None
 PointerAlignment: Left
+ReflowComments: 'true'
+SortIncludes: 'true'
+SortUsingDeclarations: 'true'
+SpaceBeforeAssignmentOperators: 'true'
+SpaceBeforeCtorInitializerColon: 'true'
+SpaceBeforeInheritanceColon: 'true'
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: 'true'
+SpaceInEmptyParentheses: 'false'
+SpacesInAngles: 'false'
+SpacesInParentheses: 'false'
+SpacesInSquareBrackets: 'false'
+Standard: Cpp11
+
+...

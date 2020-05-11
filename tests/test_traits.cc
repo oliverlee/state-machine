@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "state_machine/traits.h"
+
+#include "gtest/gtest.h"
 #include <type_traits>
 #include <utility>
 #include <vector>

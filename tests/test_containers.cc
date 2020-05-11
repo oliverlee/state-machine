@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "state_machine/containers.h"
+
+#include "gtest/gtest.h"
 #include <type_traits>
 
 namespace {
@@ -71,7 +71,10 @@ TEST(containers, filter) {
 
 namespace {
 
-template <class T> struct get_first { using type = typename T::first_type; };
+template <class T>
+struct get_first {
+    using type = typename T::first_type;
+};
 
 } // namespace
 

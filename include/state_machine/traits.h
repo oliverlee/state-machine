@@ -1,6 +1,7 @@
 #pragma once
 
 #include "state_machine/backport.h"
+
 #include <type_traits>
 
 namespace state_machine {
