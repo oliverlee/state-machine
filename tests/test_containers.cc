@@ -5,7 +5,7 @@
 
 namespace {
 using state_machine::containers::identity;
-using state_machine::containers::inherit;
+using state_machine::containers::inheritor;
 using state_machine::containers::list;
 namespace op = state_machine::containers::op;
 
@@ -19,9 +19,9 @@ TEST(containers, identity) {
 }
 
 TEST(containers, contains) {
-    static_assert(op::contains<A, inherit<A, B>>::value, "");
-    static_assert(op::contains<A, inherit<A>>::value, "");
-    static_assert(!op::contains<A, inherit<B>>::value, "");
+    static_assert(op::contains<A, inheritor<A, B>>::value, "");
+    static_assert(op::contains<A, inheritor<A>>::value, "");
+    static_assert(!op::contains<A, inheritor<B>>::value, "");
 
     static_assert(op::contains<A, list<A, B>>::value, "");
     static_assert(op::contains<A, list<A>>::value, "");

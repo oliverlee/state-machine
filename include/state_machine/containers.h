@@ -10,7 +10,7 @@ template <class T> struct identity { using type = T; };
 
 template <class...> struct list { using type = list; };
 
-template <class... Ts> struct inherit : Ts... { using type = inherit; };
+template <class... Ts> struct inheritor : Ts... { using type = inheritor; };
 
 namespace op {
 // Functions to operate on type containers
@@ -23,7 +23,7 @@ template <class K, template <class...> class L, class... Ts>
 struct contains_impl<K, L<Ts...>> : contains_impl<K, Ts...> {};
 
 template <class K, class... Ts> struct contains_impl {
-    using type = std::is_base_of<K, inherit<Ts...>>;
+    using type = std::is_base_of<K, inheritor<Ts...>>;
 };
 
 } // namespace detail
