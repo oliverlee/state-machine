@@ -16,3 +16,6 @@ endmacro()
 
 package_add_test(test_backport
     test_backport.cc)
+
+package_add_test(test_traits
+    test_traits.cc)
