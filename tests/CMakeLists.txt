@@ -14,5 +14,5 @@ macro(package_add_test TESTNAME)
         ${PROJECT_SOURCE_DIR}/include)
 endmacro()
 
-package_add_test(test_nothing
-    test_nothing.cc)
+package_add_test(test_backport
+    test_backport.cc)
