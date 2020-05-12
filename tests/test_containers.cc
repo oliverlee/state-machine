@@ -6,6 +6,8 @@
 namespace {
 using state_machine::containers::bijection;
 using state_machine::containers::identity;
+using state_machine::containers::index_constant;
+using state_machine::containers::index_map;
 using state_machine::containers::inheritor;
 using state_machine::containers::list;
 using state_machine::containers::surjection;
@@ -238,5 +240,23 @@ TEST(containers_bijection, contains_value) {
     static_assert(B0::contains_value<std::integral_constant<int, 4>>::value,
                   "");
     static_assert(!B0::contains_value<std::integral_constant<int, 5>>::value,
+                  "");
+}
+
+TEST(containers_index_map, at_value) {
+
+    using IM = index_map<bool, char, int, float, double>;
+
+    static_assert(std::is_same<IM::at_value<index_constant<0>>, bool>::value,
+                  "");
+    static_assert(std::is_same<IM::at_value<index_constant<1>>, char>::value,
+                  "");
+    static_assert(std::is_same<IM::at_value<index_constant<2>>, int>::value,
+                  "");
+    static_assert(std::is_same<IM::at_value<index_constant<3>>, float>::value,
+                  "");
+    static_assert(std::is_same<IM::at_value<index_constant<4>>, double>::value,
+                  "");
+    static_assert(std::is_same<IM::at_value<index_constant<5>>, void>::value,
                   "");
 }

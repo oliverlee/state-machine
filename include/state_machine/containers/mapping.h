@@ -5,6 +5,7 @@
 #include "state_machine/containers/operations.h"
 #include "state_machine/traits.h"
 
+#include <cstddef>
 #include <type_traits>
 #include <utility>
 
@@ -34,6 +35,8 @@ struct get_second {
 
 } // namespace detail
 
+// A mapping where Ts... is a collection of std::pair<key, value> and all keys
+// are unique.
 template <class... Ts>
 struct surjection : inheritor<Ts...> {
     static_assert(
@@ -61,6 +64,9 @@ struct surjection : inheritor<Ts...> {
     using contains_key = negation<std::is_same<void, at_key<Key>>>;
 };
 
+
+// A mapping where Ts... is a collection of std::pair<key, value> and all keys
+// are unique and all values are unique.
 template <class... Ts>
 struct bijection : surjection<Ts...> {
     using type = bijection<Ts...>;
@@ -83,6 +89,31 @@ struct bijection : surjection<Ts...> {
     template <class Value>
     using contains_value = negation<std::is_same<void, at_value<Value>>>;
 };
+
+
+// A convenience type alias for working an index_map.
+template <std::size_t I>
+using index_constant = std::integral_constant<std::size_t, I>;
+
+namespace detail {
+
+template <class... Ts>
+struct index_map_impl;
+
+template <class... Ts, class K, class... Ks>
+struct index_map_impl<list<Ts...>, K, Ks...>
+    : index_map_impl<list<Ts..., std::pair<K, index_constant<sizeof...(Ts)>>>,
+                     Ks...> {};
+
+template <class... Ts>
+struct index_map_impl<list<Ts...>> : bijection<Ts...> {};
+
+} // namespace detail
+
+// A mapping where Ks... is a collection of keys, which are unique. A unique
+// value (an index) is assigned to each key.
+template <class... Ks>
+using index_map = typename detail::index_map_impl<list<>, Ks...>::type;
 
 } // namespace mapping
 } // namespace containers

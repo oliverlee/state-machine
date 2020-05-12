@@ -13,6 +13,8 @@ using ::state_machine::containers::basic::identity;
 using ::state_machine::containers::basic::inheritor;
 using ::state_machine::containers::basic::list;
 using ::state_machine::containers::mapping::bijection;
+using ::state_machine::containers::mapping::index_constant;
+using ::state_machine::containers::mapping::index_map;
 using ::state_machine::containers::mapping::surjection;
 
 namespace op {
