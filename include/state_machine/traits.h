@@ -2,6 +2,7 @@
 
 #include "state_machine/backport.h"
 
+#include <cstddef>
 #include <type_traits>
 
 namespace state_machine {
@@ -19,6 +20,10 @@ template <class T>
 using is_copy_or_move_constructible =
     stdx::disjunction<std::is_copy_constructible<T>,
                       std::is_move_constructible<T>>;
+
+// A convenience type alias for working an index_map.
+template <std::size_t I>
+using index_constant = std::integral_constant<std::size_t, I>;
 
 } // namespace aux
 } // namespace state_machine

@@ -13,7 +13,6 @@ namespace state_machine {
 namespace containers {
 namespace mapping {
 
-using state_machine::aux::is_specialization_of;
 using state_machine::containers::basic::inheritor;
 using state_machine::containers::basic::list;
 using state_machine::containers::operations::make_unique;
@@ -40,7 +39,7 @@ struct get_second {
 template <class... Ts>
 struct surjection : inheritor<Ts...> {
     static_assert(
-        conjunction<is_specialization_of<std::pair, Ts>...>::value,
+        conjunction<aux::is_specialization_of<std::pair, Ts>...>::value,
         "A mapping must be composed of elements of type `std::pair`.");
 
     using type = surjection<Ts...>;
@@ -91,10 +90,6 @@ struct bijection : surjection<Ts...> {
 };
 
 
-// A convenience type alias for working an index_map.
-template <std::size_t I>
-using index_constant = std::integral_constant<std::size_t, I>;
-
 namespace detail {
 
 template <class... Ts>
@@ -102,8 +97,9 @@ struct index_map_impl;
 
 template <class... Ts, class K, class... Ks>
 struct index_map_impl<list<Ts...>, K, Ks...>
-    : index_map_impl<list<Ts..., std::pair<K, index_constant<sizeof...(Ts)>>>,
-                     Ks...> {};
+    : index_map_impl<
+          list<Ts..., std::pair<K, aux::index_constant<sizeof...(Ts)>>>,
+          Ks...> {};
 
 template <class... Ts>
 struct index_map_impl<list<Ts...>> : bijection<Ts...> {};

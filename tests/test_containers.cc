@@ -6,12 +6,12 @@
 namespace {
 using state_machine::containers::bijection;
 using state_machine::containers::identity;
-using state_machine::containers::index_constant;
 using state_machine::containers::index_map;
 using state_machine::containers::inheritor;
 using state_machine::containers::list;
 using state_machine::containers::surjection;
 namespace op = state_machine::containers::op;
+namespace aux = state_machine::aux;
 
 struct A {};
 struct B {};
@@ -247,16 +247,16 @@ TEST(containers_index_map, at_value) {
 
     using IM = index_map<bool, char, int, float, double>;
 
-    static_assert(std::is_same<IM::at_value<index_constant<0>>, bool>::value,
-                  "");
-    static_assert(std::is_same<IM::at_value<index_constant<1>>, char>::value,
-                  "");
-    static_assert(std::is_same<IM::at_value<index_constant<2>>, int>::value,
-                  "");
-    static_assert(std::is_same<IM::at_value<index_constant<3>>, float>::value,
-                  "");
-    static_assert(std::is_same<IM::at_value<index_constant<4>>, double>::value,
-                  "");
-    static_assert(std::is_same<IM::at_value<index_constant<5>>, void>::value,
-                  "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<0>>, bool>::value, "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<1>>, char>::value, "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<2>>, int>::value, "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<3>>, float>::value, "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<4>>, double>::value, "");
+    static_assert(
+        std::is_same<IM::at_value<aux::index_constant<5>>, void>::value, "");
 }
