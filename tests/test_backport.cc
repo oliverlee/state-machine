@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "state_machine/backport.h"
+
+#include "gtest/gtest.h"
 #include <type_traits>
 
 using namespace state_machine;
