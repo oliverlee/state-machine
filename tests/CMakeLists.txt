@@ -43,6 +43,9 @@ package_add_test(test_traits
 package_add_test(test_containers
     test_containers.cc)
 
+package_add_test(test_transition
+    test_transition.cc)
+
 package_add_test(test_variant
     test_variant.cc)
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <type_traits>
 
 namespace state_machine {
@@ -35,6 +36,13 @@ using void_t = void;
 // Backport std::bool_constant (C++17)
 template <bool B>
 using bool_constant = std::integral_constant<bool, B>;
+
+// Backport std::is_invocable_r (C++17)
+// https://stackoverflow.com/questions/51187974/can-stdis-invocable-be-emulated-within-c11
+template <typename R, typename F, typename... Args>
+struct is_invocable_r
+    : std::is_constructible<std::function<R(Args...)>,
+                            std::reference_wrapper<typename std::remove_reference<F>::type>> {};
 
 } // namespace stdx
 } // namespace state_machine
