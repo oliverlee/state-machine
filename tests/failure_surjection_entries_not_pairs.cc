@@ -7,9 +7,8 @@
 namespace {
 using state_machine::containers::surjection;
 
-using S = surjection<
-    std::tuple<std::integral_constant<int, 0>, std::integral_constant<int, 0>>,
-    std::tuple<std::integral_constant<int, 1>, std::integral_constant<int, 1>>>;
+using S = surjection<std::tuple<std::integral_constant<int, 0>, std::integral_constant<int, 0>>,
+                     std::tuple<std::integral_constant<int, 1>, std::integral_constant<int, 1>>>;
 } // namespace
 
 int main() {

@@ -6,9 +6,8 @@
 namespace {
 using state_machine::containers::bijection;
 
-using B = bijection<
-    std::pair<std::integral_constant<int, 0>, std::integral_constant<int, 0>>,
-    std::pair<std::integral_constant<int, 1>, std::integral_constant<int, 0>>>;
+using B = bijection<std::pair<std::integral_constant<int, 0>, std::integral_constant<int, 0>>,
+                    std::pair<std::integral_constant<int, 1>, std::integral_constant<int, 0>>>;
 } // namespace
 
 int main() {

@@ -18,8 +18,7 @@ struct is_specialization_of<Template, Template<Args...>> : std::true_type {};
 // Check if a type is copy or move constructible
 template <class T>
 using is_copy_or_move_constructible =
-    stdx::disjunction<std::is_copy_constructible<T>,
-                      std::is_move_constructible<T>>;
+    stdx::disjunction<std::is_copy_constructible<T>, std::is_move_constructible<T>>;
 
 // A convenience type alias for working an index_map.
 template <std::size_t I>
