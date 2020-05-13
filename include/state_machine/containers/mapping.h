@@ -55,7 +55,8 @@ struct surjection : inheritor<Ts...> {
     static constexpr auto at_key_impl(std::pair<Key, Value>*) -> Value;
 
     template <class Key, class Default = void>
-    using at_key = decltype(at_key_impl<Key, Default>(std::declval<inheritor<Ts...>*>()));
+    using at_key =
+        decltype(surjection::at_key_impl<Key, Default>(std::declval<inheritor<Ts...>*>()));
 
     template <class Key>
     using contains_key = negation<std::is_same<void, at_key<Key>>>;
@@ -80,7 +81,8 @@ struct bijection : surjection<Ts...> {
     static constexpr auto at_value_impl(std::pair<Key, Value>*) -> Key;
 
     template <class Value, class Default = void>
-    using at_value = decltype(at_value_impl<Value, Default>(std::declval<inheritor<Ts...>*>()));
+    using at_value =
+        decltype(bijection::at_value_impl<Value, Default>(std::declval<inheritor<Ts...>*>()));
 
     template <class Value>
     using contains_value = negation<std::is_same<void, at_value<Value>>>;

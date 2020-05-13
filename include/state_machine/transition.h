@@ -86,14 +86,15 @@ struct Transition : Guard, Action {
         : Guard{std::forward<Guard>(guard)}, Action{std::forward<Action>(action)} {}
 
     template <typename... Ts>
-    auto guard(Ts&&... ts) const noexcept(noexcept(Guard::operator()(std::forward<Ts>(ts)...)))
-        -> bool {
+    auto guard(Ts&&... ts) const
+        noexcept(noexcept(std::declval<Guard>().operator()(std::forward<Ts>(ts)...))) -> bool {
         return Guard::operator()(std::forward<Ts>(ts)...);
     }
 
     template <typename... Ts>
-    auto action(Ts&&... ts) const noexcept(noexcept(Action::operator()(std::forward<Ts>(ts)...)))
-        -> destination_type {
+    auto action(Ts&&... ts) const
+        noexcept(noexcept(std::declval<Action>().operator()(std::forward<Ts>(ts)...)))
+            -> destination_type {
         return Action::operator()(std::forward<Ts>(ts)...);
     }
 };

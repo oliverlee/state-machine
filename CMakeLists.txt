@@ -18,7 +18,6 @@ set(COMMON_CXX_OPTIONS
     -Wpedantic
     -Wconversion
     -Wsign-conversion
-    -Wnull-dereference
     -Wdouble-promotion
     -Wformat=2
 )
@@ -29,16 +28,23 @@ set(CLANG_CXX_OPTIONS
 
 set(GCC_CXX_OPTIONS
     ${COMMON_CXX_OPTIONS}
-    -Wduplicated-cond
-    -Wduplicated-branches
     -Wlogical-op
     -Wuseless-cast
-    -Wmisleading-indentation
 )
 
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(DEFAULT_CXX_OPTIONS ${CLANG_CXX_OPTIONS})
+    set(DEFAULT_CXX_OPTIONS ${CLANG_CXX_OPTIONS} -Wnull-dereference)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+        set(GCC_CXX_OPTIONS ${GCC_CXX_OPTIONS} -Wno-shadow)
+    endif()
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6)
+        set(GCC_CXX_OPTIONS ${GCC_CXX_OPTIONS}
+            -Wduplicated-cond
+            -Wduplicated-branches
+            -Wmisleading-indentation)
+    endif()
     set(DEFAULT_CXX_OPTIONS ${GCC_CXX_OPTIONS})
 endif()
 
