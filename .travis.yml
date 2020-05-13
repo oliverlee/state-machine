@@ -19,6 +19,7 @@ matrix:
 script:
   - find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format -i {} \;
   - git update-index --really-refresh
+  - git --no-pager diff
   - mkdir -p build
   - cd build
   - cmake ..
