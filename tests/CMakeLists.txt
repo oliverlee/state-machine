@@ -43,6 +43,9 @@ package_add_test(test_traits
 package_add_test(test_containers
     test_containers.cc)
 
+package_add_test(test_variant
+    test_variant.cc)
+
 # compilation tests
 expect_compile_failure(failure_surjection_duplicate_keys.cc)
 expect_compile_failure(failure_surjection_entries_not_pairs.cc)

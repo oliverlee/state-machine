@@ -12,8 +12,7 @@ struct conjunction : std::true_type {};
 template <class B1>
 struct conjunction<B1> : B1 {};
 template <class B1, class... Bn>
-struct conjunction<B1, Bn...>
-    : std::conditional_t<bool(B1::value), conjunction<Bn...>, B1> {};
+struct conjunction<B1, Bn...> : std::conditional_t<bool(B1::value), conjunction<Bn...>, B1> {};
 
 // Backport std::disjunction (C++17)
 // https://en.cppreference.com/w/cpp/experimental/disjunction#Possible_implementation
@@ -22,8 +21,7 @@ struct disjunction : std::false_type {};
 template <class B1>
 struct disjunction<B1> : B1 {};
 template <class B1, class... Bn>
-struct disjunction<B1, Bn...>
-    : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
+struct disjunction<B1, Bn...> : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
 
 // Backport std::negation (C++17)
 // https://en.cppreference.com/w/cpp/types/negation#Possible_implementation
