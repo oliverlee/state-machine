@@ -108,7 +108,11 @@ TEST(transition, transition_size_guard_capture_int) {
     int x = 42;
 
     auto transition = make_transition(
-        state<s1>, event<e2>, [x](const auto& e) { return e.value > x; }, []() { return s2{}; }, state<s2>);
+        state<s1>,
+        event<e2>,
+        [x](const auto& e) { return e.value > x; },
+        []() { return s2{}; },
+        state<s2>);
 
     static_assert(sizeof(transition) == sizeof(x), "");
 }

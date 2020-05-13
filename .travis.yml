@@ -17,7 +17,7 @@ matrix:
     fast_finish: true
 
 script:
-  - find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format -i {} \;
+  - find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format-8 -i {} \;
   - git update-index --really-refresh
   - git --no-pager diff
   - mkdir -p build
