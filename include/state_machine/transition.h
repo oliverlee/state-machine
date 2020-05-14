@@ -1,5 +1,6 @@
 #pragma once
 
+#include "state_machine/backport.h"
 #include "state_machine/containers.h"
 #include "state_machine/traits.h"
 
@@ -87,7 +88,7 @@ struct Transition : Guard, Action {
     // stateless function that takes no arguments and returns a bool.
     static constexpr auto has_empty_guard = std::is_convertible<Guard, bool (*)(void)>::value;
 
-    constexpr Transition(Guard&& guard, Action&& action)
+    constexpr Transition(Guard&& guard, Action&& action) noexcept
         : Guard{std::forward<Guard>(guard)}, Action{std::forward<Action>(action)} {}
 
     template <typename... Ts>
