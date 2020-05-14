@@ -1,6 +1,7 @@
 #include "state_machine.h"
 
 #include "gtest/gtest.h"
+#include <limits>
 #include <type_traits>
 
 namespace {
@@ -25,7 +26,7 @@ const auto t1 = []() {
     return make_transition(
         state<s1>,
         event<e1>,
-        [](const auto& e) { return e.value > 0; },
+        [](const e1& e) { return e.value > 0; },
         [] { return s2{}; },
         state<s2>);
 };
@@ -34,7 +35,7 @@ const auto t2 = []() {
     return make_transition(
         state<s1>,
         event<e1>,
-        [](const auto& e) { return e.value <= 0; },
+        [](const e1& e) { return e.value <= 0; },
         [] { return s3{}; },
         state<s3>);
 };
@@ -78,11 +79,38 @@ TEST(transition_row, update_row) {
     EXPECT_TRUE(std::get<0>(row2).guard(e1{0}));
 }
 
-TEST(transition_row, row_key_type) {
+TEST(transition_row, key_type) {
     namespace tr = ::state_machine::transition;
 
     const auto row = make_row(t1());
     static_assert(decltype(row)::size == 1, "");
     static_assert(
         std::is_same<decltype(row)::key_type, tr::Key<tr::State<s1>, tr::Event<e1>>>::value, "");
+}
+
+TEST(transition_row, find_guard_success) {
+    const auto row = make_row(t1(), t2());
+    static_assert(decltype(row)::size == 2, "");
+
+    {
+        ASSERT_TRUE(std::get<0>(row).guard(e1{1}));
+        const auto index = row.find_transition(s1{}, e1{1});
+        EXPECT_EQ(index, 0);
+    }
+
+    {
+        ASSERT_TRUE(std::get<1>(row).guard(e1{0}));
+        const auto index = row.find_transition(s1{}, e1{0});
+        EXPECT_EQ(index, 1);
+    }
+}
+
+TEST(transition_row, find_guard_failure) {
+    const auto row = make_row(t1());
+    static_assert(decltype(row)::size == 1, "");
+
+    ASSERT_FALSE(std::get<0>(row).guard(e1{0}));
+    const auto index = row.find_transition(s1{}, e1{0});
+    EXPECT_NE(index, 0);
+    EXPECT_EQ(index, std::numeric_limits<size_t>::max());
 }

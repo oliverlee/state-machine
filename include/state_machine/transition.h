@@ -58,6 +58,16 @@ using is_action =
 
 } // namespace detail
 
+template <class T>
+struct has_nothrow_guard
+    : stdx::bool_constant<noexcept(std::declval<T>().invoke_guard(
+          std::declval<typename T::source_type>(), std::declval<typename T::event_type>()))> {};
+
+template <class T>
+struct has_nothrow_action
+    : stdx::bool_constant<noexcept(std::declval<T>().invoke_action(
+          std::declval<typename T::source_type&>(), std::declval<typename T::event_type&>()))> {};
+
 template <class Source, class Event, class Guard, class Action, class Destination>
 struct Transition : Guard, Action {
     static_assert(detail::is_state<Source>::value,
@@ -120,7 +130,6 @@ struct Transition : Guard, Action {
     template <class R = bool,
               std::enable_if_t<stdx::is_invocable_r<R, Guard, event_type>::value, int> = 0>
     auto invoke_guard(const source_type&, const event_type& event) const
-
         noexcept(noexcept(std::declval<type>().guard(std::declval<event_type>()))) -> bool {
         return guard(event);
     }
@@ -129,7 +138,7 @@ struct Transition : Guard, Action {
         class R = bool,
         std::enable_if_t<stdx::is_invocable_r<R, Guard, source_type, event_type>::value, int> = 0>
     auto invoke_guard(const source_type& source, const event_type& event) const
-        noexcept(noexcept(std::declval<type>().guard(std::declval<source_type&>(),
+        noexcept(noexcept(std::declval<type>().guard(std::declval<source_type>(),
                                                      std::declval<event_type>()))) -> bool {
         return guard(source, event);
     }
