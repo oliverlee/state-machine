@@ -4,7 +4,6 @@
 #include "state_machine/traits.h"
 
 #include <type_traits>
-#include <utility>
 
 namespace state_machine {
 namespace transition {
@@ -19,6 +18,12 @@ struct State {
 template <class T>
 struct Event {
     using type = T;
+};
+
+template <class S, class E>
+struct Key {
+    using source_type = S;
+    using event_type = E;
 };
 
 namespace detail {
@@ -62,7 +67,7 @@ struct Transition : Guard, Action {
                   "`Destination` type parameter must be a specialization of `State`.");
 
     using type = Transition<Source, Event, Guard, Action, Destination>;
-    using key_type = std::pair<Source, Event>;
+    using key_type = Key<Source, Event>;
     using source_type = typename Source::type;
     using event_type = typename Event::type;
     using guard_type = Guard;
