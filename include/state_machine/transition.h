@@ -91,17 +91,81 @@ struct Transition : Guard, Action {
     constexpr Transition(Guard&& guard, Action&& action) noexcept
         : Guard{std::forward<Guard>(guard)}, Action{std::forward<Action>(action)} {}
 
-    template <typename... Ts>
+    template <class... Ts>
     auto guard(Ts&&... ts) const
         noexcept(noexcept(std::declval<Guard>().operator()(std::forward<Ts>(ts)...))) -> bool {
         return Guard::operator()(std::forward<Ts>(ts)...);
     }
 
-    template <typename... Ts>
+    template <class... Ts>
     auto action(Ts&&... ts) const
         noexcept(noexcept(std::declval<Action>().operator()(std::forward<Ts>(ts)...)))
             -> destination_type {
         return Action::operator()(std::forward<Ts>(ts)...);
+    }
+
+    template <class R = bool, std::enable_if_t<stdx::is_invocable_r<R, Guard>::value, int> = 0>
+    auto invoke_guard(const source_type&, const event_type&) const
+        noexcept(noexcept(std::declval<type>().guard())) -> bool {
+        return guard();
+    }
+
+    template <class R = bool,
+              std::enable_if_t<stdx::is_invocable_r<R, Guard, source_type>::value, int> = 0>
+    auto invoke_guard(const source_type& source, const event_type&) const
+        noexcept(noexcept(std::declval<type>().guard(std::declval<source_type>()))) -> bool {
+        return guard(source);
+    }
+
+    template <class R = bool,
+              std::enable_if_t<stdx::is_invocable_r<R, Guard, event_type>::value, int> = 0>
+    auto invoke_guard(const source_type&, const event_type& event) const
+
+        noexcept(noexcept(std::declval<type>().guard(std::declval<event_type>()))) -> bool {
+        return guard(event);
+    }
+
+    template <
+        class R = bool,
+        std::enable_if_t<stdx::is_invocable_r<R, Guard, source_type, event_type>::value, int> = 0>
+    auto invoke_guard(const source_type& source, const event_type& event) const
+        noexcept(noexcept(std::declval<type>().guard(std::declval<source_type&>(),
+                                                     std::declval<event_type>()))) -> bool {
+        return guard(source, event);
+    }
+
+    template <class R = destination_type,
+              std::enable_if_t<stdx::is_invocable_r<R, Action>::value, int> = 0>
+    auto invoke_action(source_type&, event_type&) const
+        noexcept(noexcept(std::declval<type>().action())) -> destination_type {
+        return action();
+    }
+
+    template <class R = destination_type,
+              std::enable_if_t<stdx::is_invocable_r<R, Action, source_type&>::value, int> = 0>
+    auto invoke_action(source_type& source, event_type&) const
+        noexcept(noexcept(std::declval<type>().action(std::declval<source_type&>())))
+            -> destination_type {
+        return action(source);
+    }
+
+    template <class R = destination_type,
+              std::enable_if_t<stdx::is_invocable_r<R, Action, event_type&>::value, int> = 0>
+    auto invoke_action(source_type&, event_type& event) const
+
+        noexcept(noexcept(std::declval<type>().action(std::declval<event_type&>())))
+            -> destination_type {
+        return action(event);
+    }
+
+    template <class R = destination_type,
+              std::enable_if_t<stdx::is_invocable_r<R, Action, source_type&, event_type&>::value,
+                               int> = 0>
+    auto invoke_action(source_type& source, event_type& event) const
+        noexcept(noexcept(std::declval<type>().action(std::declval<source_type&>(),
+                                                      std::declval<event_type&>())))
+            -> destination_type {
+        return action(source, event);
     }
 };
 
