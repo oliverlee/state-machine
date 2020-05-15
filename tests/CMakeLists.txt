@@ -46,6 +46,9 @@ package_add_test(test_containers
 package_add_test(test_transition
     test_transition.cc)
 
+package_add_test(test_transition_row
+    test_transition_row.cc)
+
 package_add_test(test_variant
     test_variant.cc)
 

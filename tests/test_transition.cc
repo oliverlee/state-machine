@@ -130,3 +130,83 @@ TEST(transition, guard_moved_into_transition_size) {
     EXPECT_FALSE(transition.guard(e2{threshold}));
     EXPECT_TRUE(transition.guard(e2{threshold + 1}));
 }
+
+TEST(transition, invoke_guard_0) {
+    auto transition = make_transition(state<s1>, event<e1>, _, _, _);
+
+    EXPECT_EQ(transition.guard(), true);
+
+    EXPECT_EQ(transition.invoke_guard(s1{}, e1{}), true);
+}
+
+TEST(transition, invoke_guard_s) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, [](const s1&) { return true; }, _, _);
+
+    EXPECT_EQ(transition.guard(s1{}), true);
+
+    EXPECT_EQ(transition.invoke_guard(s1{}, e1{}), true);
+}
+
+TEST(transition, invoke_guard_e) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, [](const e1&) { return true; }, _, _);
+
+    EXPECT_EQ(transition.guard(e1{}), true);
+
+    EXPECT_EQ(transition.invoke_guard(s1{}, e1{}), true);
+}
+
+TEST(transition, invoke_guard_se) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, [](const s1&, const e1&) { return true; }, _, _);
+
+    EXPECT_EQ(transition.guard(s1{}, e1{}), true);
+
+    EXPECT_EQ(transition.invoke_guard(s1{}, e1{}), true);
+}
+
+TEST(transition, invoke_action_0) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, _, [] { return s2{}; }, state<s2>);
+
+    auto s = s1{};
+    auto e = e1{};
+
+    static_assert(std::is_same<decltype(transition.action()), s2>::value, "");
+    static_assert(std::is_same<decltype(transition.invoke_action(s, e)), s2>::value, "");
+}
+
+TEST(transition, invoke_action_s) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, _, [](s1&) { return s2{}; }, state<s2>);
+
+    auto s = s1{};
+    auto e = e1{};
+
+    static_assert(std::is_same<decltype(transition.action(s)), s2>::value, "");
+    static_assert(std::is_same<decltype(transition.invoke_action(s, e)), s2>::value, "");
+}
+
+TEST(transition, invoke_action_e) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, _, [](e1&) { return s2{}; }, state<s2>);
+
+    auto s = s1{};
+    auto e = e1{};
+
+    static_assert(std::is_same<decltype(transition.action(e)), s2>::value, "");
+    static_assert(std::is_same<decltype(transition.invoke_action(s, e)), s2>::value, "");
+}
+
+TEST(transition, invoke_action_se) {
+    auto transition = make_transition(
+        state<s1>, event<e1>, _, [](s1&, e1&) { return s2{}; }, state<s2>);
+
+
+    auto s = s1{};
+    auto e = e1{};
+
+    static_assert(std::is_same<decltype(transition.action(s, e)), s2>::value, "");
+    static_assert(std::is_same<decltype(transition.invoke_action(s, e)), s2>::value, "");
+}
