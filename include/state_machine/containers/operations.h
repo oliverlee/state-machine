@@ -117,6 +117,23 @@ struct map_impl<Func, L<Rs...>> : L<Rs...> {};
 template <template <class> class Func, class L>
 using map = typename detail::map_impl_input<Func, L>::type;
 
+
+namespace detail {
+
+template <class A, template <class...> class B>
+struct repack_impl;
+
+template <template <class...> class A, class... Ts, template <class...> class B>
+struct repack_impl<A<Ts...>, B> {
+    using type = B<Ts...>;
+};
+
+} // namespace detail
+
+// Given A<Ts...>, return B<Ts...>.
+template <class A, template <class...> class B>
+using repack = typename detail::repack_impl<A, B>::type;
+
 } // namespace operations
 } // namespace containers
 } // namespace state_machine
