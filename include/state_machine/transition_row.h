@@ -38,7 +38,7 @@ class Row {
     constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
     template <class U>
-        constexpr auto append(U&& transition) && noexcept {
+    constexpr auto append(U&& transition) && noexcept {
         static_assert(is_transition<U>::value, "");
 
         return std::move(*this).append_impl(std::forward<U>(transition),
@@ -53,20 +53,18 @@ class Row {
 
   private:
     template <class U, size_t... Is>
-        constexpr auto append_impl(U&& transition, std::index_sequence<Is>...) && noexcept {
+    constexpr auto append_impl(U&& transition, std::index_sequence<Is...>) && noexcept {
         return Row<T, Ts..., U>(std::get<Is>(std::move(*this).into_data())...,
                                 std::forward<U>(transition));
     }
 
-    template <class S, class E, size_t I>
-    constexpr auto find_transition_impl(S source, E event, std::index_sequence<I>) const -> size_t {
-        return std::get<I>(data_).invoke_guard(source, event) ?
-                   I :
-                   std::numeric_limits<size_t>::max(); // TODO : replace with optional?
+    template <class S, class E>
+    constexpr auto find_transition_impl(S, E, std::index_sequence<>) const -> size_t {
+        return std::numeric_limits<size_t>::max(); // TODO : replace with optional?
     }
 
     template <class S, class E, size_t I, size_t... Is>
-    constexpr auto find_transition_impl(S source, E event, std::index_sequence<I, Is>...) const
+    constexpr auto find_transition_impl(S source, E event, std::index_sequence<I, Is...>) const
         -> size_t {
         return std::get<I>(data_).invoke_guard(source, event) ?
                    I :
