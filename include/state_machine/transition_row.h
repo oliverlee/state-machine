@@ -40,6 +40,14 @@ class Row {
 
     constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
+    template <class U>
+        constexpr auto append(U&& transition) && noexcept {
+        static_assert(is_transition<U>::value, "");
+
+        return std::move(*this).append_impl(std::forward<U>(transition),
+                                            std::make_index_sequence<size>{});
+    }
+
     auto find_transition(const source_type& source, const event_type& event) const
         noexcept(stdx::conjunction<has_nothrow_guard<T>, has_nothrow_guard<Ts>...>::value)
             -> size_t {
@@ -47,6 +55,12 @@ class Row {
     }
 
   private:
+    template <class U, size_t... Is>
+        constexpr auto append_impl(U&& transition, std::index_sequence<Is>...) && noexcept {
+        return Row<T, Ts..., U>(std::get<Is>(std::move(*this).into_data())...,
+                                std::forward<U>(transition));
+    }
+
     template <class R, class S, class E, size_t I, size_t... Is>
     static constexpr auto
     find_transition_impl(R self, S source, E event, std::index_sequence<I, Is>...) -> size_t {
@@ -73,25 +87,6 @@ constexpr auto make_row(T&& first, Ts&&... others) noexcept {
     static_assert(stdx::conjunction<is_transition<Ts>...>::value, "");
 
     return Row<T, Ts...>(std::forward<T>(first), std::forward<Ts>(others)...);
-}
-
-namespace detail {
-
-template <class... Ts, class T, size_t... Is>
-constexpr auto
-update_row_impl(Row<Ts...>&& row, T&& transition, std::index_sequence<Is>...) noexcept {
-    return Row<Ts..., T>(std::get<Is>(std::move(row).into_data())..., std::forward<T>(transition));
-}
-
-} // namespace detail
-
-template <class R, class T>
-constexpr auto update_row(R&& row, T&& transition) noexcept {
-    static_assert(aux::is_specialization_of<Row, R>::value, "");
-    static_assert(is_transition<T>::value, "");
-
-    return detail::update_row_impl(
-        std::forward<R>(row), std::forward<T>(transition), std::make_index_sequence<R::size>{});
 }
 
 } // namespace transition
