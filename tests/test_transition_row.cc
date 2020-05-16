@@ -11,7 +11,6 @@ using ::state_machine::state;
 using ::state_machine::placeholder::_;
 
 using ::state_machine::transition::make_row;
-using ::state_machine::transition::update_row;
 
 struct s1 {};
 struct s2 {};
@@ -46,37 +45,36 @@ TEST(transition_row, make_row_t1) {
     const auto row = make_row(t1());
     static_assert(decltype(row)::size == 1, "");
 
-    EXPECT_TRUE(std::get<0>(row).guard(e1{1}));
-    EXPECT_FALSE(std::get<0>(row).guard(e1{0}));
+    EXPECT_TRUE(std::get<0>(row.data()).guard(e1{1}));
+    EXPECT_FALSE(std::get<0>(row.data()).guard(e1{0}));
 }
 
 TEST(transition_row, make_row_t1t2) {
     const auto row = make_row(t1(), t2());
     static_assert(decltype(row)::size == 2, "");
 
-    EXPECT_TRUE(std::get<0>(row).guard(e1{1}));
-    EXPECT_FALSE(std::get<0>(row).guard(e1{0}));
+    EXPECT_TRUE(std::get<0>(row.data()).guard(e1{1}));
+    EXPECT_FALSE(std::get<0>(row.data()).guard(e1{0}));
 
-    EXPECT_FALSE(std::get<1>(row).guard(e1{1}));
-    EXPECT_TRUE(std::get<1>(row).guard(e1{0}));
+    EXPECT_FALSE(std::get<1>(row.data()).guard(e1{1}));
+    EXPECT_TRUE(std::get<1>(row.data()).guard(e1{0}));
 }
 
-TEST(transition_row, update_row) {
+TEST(transition_row, append) {
     auto row1 = make_row(t1());
     static_assert(decltype(row1)::size == 1, "");
 
-    EXPECT_TRUE(std::get<0>(row1).guard(e1{1}));
-    EXPECT_FALSE(std::get<0>(row1).guard(e1{0}));
+    EXPECT_TRUE(std::get<0>(row1.data()).guard(e1{1}));
+    EXPECT_FALSE(std::get<0>(row1.data()).guard(e1{0}));
 
-    auto row2 = update_row(std::move(row1), t2());
+    auto row2 = std::move(row1).append(t2());
     static_assert(decltype(row2)::size == 2, "");
 
-    // update_row inserts the new transition at the front
-    EXPECT_TRUE(std::get<1>(row2).guard(e1{1}));
-    EXPECT_FALSE(std::get<1>(row2).guard(e1{0}));
+    EXPECT_TRUE(std::get<0>(row2.data()).guard(e1{1}));
+    EXPECT_FALSE(std::get<0>(row2.data()).guard(e1{0}));
 
-    EXPECT_FALSE(std::get<0>(row2).guard(e1{1}));
-    EXPECT_TRUE(std::get<0>(row2).guard(e1{0}));
+    EXPECT_FALSE(std::get<1>(row2.data()).guard(e1{1}));
+    EXPECT_TRUE(std::get<1>(row2.data()).guard(e1{0}));
 }
 
 TEST(transition_row, key_type) {
@@ -93,13 +91,13 @@ TEST(transition_row, find_guard_success) {
     static_assert(decltype(row)::size == 2, "");
 
     {
-        ASSERT_TRUE(std::get<0>(row).guard(e1{1}));
+        ASSERT_TRUE(std::get<0>(row.data()).guard(e1{1}));
         const auto index = row.find_transition(s1{}, e1{1});
         EXPECT_EQ(index, 0);
     }
 
     {
-        ASSERT_TRUE(std::get<1>(row).guard(e1{0}));
+        ASSERT_TRUE(std::get<1>(row.data()).guard(e1{0}));
         const auto index = row.find_transition(s1{}, e1{0});
         EXPECT_EQ(index, 1);
     }
@@ -109,7 +107,7 @@ TEST(transition_row, find_guard_failure) {
     const auto row = make_row(t1());
     static_assert(decltype(row)::size == 1, "");
 
-    ASSERT_FALSE(std::get<0>(row).guard(e1{0}));
+    ASSERT_FALSE(std::get<0>(row.data()).guard(e1{0}));
     const auto index = row.find_transition(s1{}, e1{0});
     EXPECT_NE(index, 0);
     EXPECT_EQ(index, std::numeric_limits<size_t>::max());
