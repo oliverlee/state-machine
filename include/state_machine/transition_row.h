@@ -48,9 +48,9 @@ class Row {
                                             std::make_index_sequence<size>{});
     }
 
-    auto find_transition(const source_type& source, const event_type& event) const
-        noexcept(stdx::conjunction<has_nothrow_guard<T>, has_nothrow_guard<Ts>...>::value)
-            -> size_t {
+    auto find_transition(const source_type& source, const event_type& event) const noexcept(
+        stdx::conjunction<is_nothrow_guard_invocable<T>, is_nothrow_guard_invocable<Ts>...>::value)
+        -> size_t {
         return find_transition_impl(source, event, std::make_index_sequence<size>{});
     }
 
