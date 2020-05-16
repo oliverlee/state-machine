@@ -13,9 +13,6 @@
 namespace state_machine {
 namespace transition {
 
-template <class T>
-using is_transition = aux::is_specialization_of<Transition, T>;
-
 template <class T, class... Ts>
 class Row {
   public:
@@ -87,6 +84,9 @@ constexpr auto make_row(T&& first, Ts&&... others) noexcept {
 
     return Row<T, Ts...>(std::forward<T>(first), std::forward<Ts>(others)...);
 }
+
+template <class R>
+using is_row = aux::is_specialization_of<Row, R>;
 
 } // namespace transition
 } // namespace state_machine

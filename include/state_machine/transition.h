@@ -230,5 +230,8 @@ constexpr auto make_transition(Source, Event, Guard&& guard, Action&& action, De
         std::forward<UpdatedGuard>(updated_guard), std::forward<UpdatedAction>(updated_action)};
 }
 
+template <class T>
+using is_transition = aux::is_specialization_of<Transition, T>;
+
 } // namespace transition
 } // namespace state_machine
