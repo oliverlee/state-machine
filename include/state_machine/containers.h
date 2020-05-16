@@ -20,6 +20,7 @@ namespace op {
 
 using ::state_machine::containers::operations::contains;
 using ::state_machine::containers::operations::filter;
+using ::state_machine::containers::operations::flatten;
 using ::state_machine::containers::operations::make_unique;
 using ::state_machine::containers::operations::map;
 using ::state_machine::containers::operations::repack;
