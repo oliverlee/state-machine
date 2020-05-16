@@ -51,7 +51,7 @@ class Row {
     auto find_transition(const source_type& source, const event_type& event) const
         noexcept(stdx::conjunction<has_nothrow_guard<T>, has_nothrow_guard<Ts>...>::value)
             -> size_t {
-        return find_transition_impl(*this, source, event, std::make_index_sequence<size>{});
+        return find_transition_impl(source, event, std::make_index_sequence<size>{});
     }
 
   private:
@@ -61,20 +61,19 @@ class Row {
                                 std::forward<U>(transition));
     }
 
-    template <class R, class S, class E, size_t I, size_t... Is>
-    static constexpr auto
-    find_transition_impl(R self, S source, E event, std::index_sequence<I, Is>...) -> size_t {
-        return std::get<I>(self.data_).invoke_guard(source, event) ?
-                   I :
-                   find_transition_impl(self, source, event, std::index_sequence<Is...>{});
-    }
-
-    template <class R, class S, class E, size_t I>
-    static constexpr auto find_transition_impl(R self, S source, E event, std::index_sequence<I>)
-        -> size_t {
-        return std::get<I>(self.data_).invoke_guard(source, event) ?
+    template <class S, class E, size_t I>
+    constexpr auto find_transition_impl(S source, E event, std::index_sequence<I>) const -> size_t {
+        return std::get<I>(data_).invoke_guard(source, event) ?
                    I :
                    std::numeric_limits<size_t>::max(); // TODO : replace with optional?
+    }
+
+    template <class S, class E, size_t I, size_t... Is>
+    constexpr auto find_transition_impl(S source, E event, std::index_sequence<I, Is>...) const
+        -> size_t {
+        return std::get<I>(data_).invoke_guard(source, event) ?
+                   I :
+                   find_transition_impl(source, event, std::index_sequence<Is...>{});
     }
 
     data_type data_;
