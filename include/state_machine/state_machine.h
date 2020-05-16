@@ -7,6 +7,39 @@
 namespace state_machine {
 namespace state_machine {
 
+namespace detail {
+
+template <class, class = void>
+struct has_on_entry : std::false_type {};
+
+template <class T>
+struct has_on_entry<T, stdx::void_t<decltype(std::declval<T>().on_entry())>> : std::true_type {};
+
+template <class T, std::enable_if_t<!has_on_entry<T>::value, int> = 0>
+static auto on_entry(T&) noexcept -> void {}
+
+template <class T, std::enable_if_t<has_on_entry<T>::value, int> = 0>
+static auto on_entry(T& t) noexcept(noexcept(std::declval<T>().on_entry())) -> void {
+    t.on_entry();
+}
+
+
+template <class, class = void>
+struct has_on_exit : std::false_type {};
+
+template <class T>
+struct has_on_exit<T, stdx::void_t<decltype(std::declval<T>().on_exit())>> : std::true_type {};
+
+template <class T, std::enable_if_t<!has_on_exit<T>::value, int> = 0>
+static auto on_exit(T&) noexcept -> void {}
+
+template <class T, std::enable_if_t<has_on_exit<T>::value, int> = 0>
+static auto on_exit(T& t) noexcept(noexcept(std::declval<T>().on_exit())) -> void {
+    t.on_exit();
+}
+
+} // namespace detail
+
 template <class Table>
 class StateMachine {
     static_assert(transition::is_table<Table>::value,
