@@ -98,3 +98,61 @@ TEST(state_machine, state_types) {
     // order follows from transition table row order (all sources, then all destinations).
     static_assert(std::is_same<SM::state_types, list<s1, s3, s2>>::value, "");
 }
+
+TEST(state_machine, emplace_initial_state) {
+    struct s4 {
+        constexpr s4(int i) : value{i} {}
+        int value;
+    };
+
+    const auto generate_table = []() noexcept {
+        return make_table_from_transition_args(
+            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+    };
+
+    StateMachine<decltype(generate_table())> sm{generate_table(), 10};
+}
+
+TEST(state_machine, on_entry_initial_state) {
+    static int on_entry_count;
+
+    struct s4 {
+        constexpr s4() {}
+        auto on_entry() -> void { on_entry_count++; }
+    };
+
+    const auto generate_table = []() noexcept {
+        return make_table_from_transition_args(
+            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+    };
+
+
+    {
+        EXPECT_EQ(on_entry_count, 0);
+        StateMachine<decltype(generate_table())> sm{generate_table()};
+        EXPECT_EQ(on_entry_count, 1);
+    }
+    EXPECT_EQ(on_entry_count, 1);
+}
+
+TEST(state_machine, on_exit_state_sm_dtor) {
+    static int on_exit_count;
+
+    struct s4 {
+        constexpr s4() {}
+        auto on_exit() -> void { on_exit_count++; }
+    };
+
+    const auto generate_table = []() noexcept {
+        return make_table_from_transition_args(
+            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+    };
+
+
+    {
+        EXPECT_EQ(on_exit_count, 0);
+        StateMachine<decltype(generate_table())> sm{generate_table()};
+        EXPECT_EQ(on_exit_count, 0);
+    }
+    EXPECT_EQ(on_exit_count, 1);
+}

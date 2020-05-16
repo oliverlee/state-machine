@@ -1,11 +1,16 @@
 #pragma once
 
+#include "state_machine/containers.h"
 #include "state_machine/transition/transition_table.h"
+#include "state_machine/variant.h"
 
 #include <tuple>
 
 namespace state_machine {
 namespace state_machine {
+
+using ::state_machine::variant::Variant;
+namespace op = ::state_machine::containers::op;
 
 namespace detail {
 
@@ -52,10 +57,19 @@ class StateMachine {
     using initial_state_type =
         typename std::tuple_element_t<0, typename Table::data_type>::source_type;
 
-    StateMachine(Table&& table) : table_{std::forward<Table>(table)} {}
+    template <class... Args>
+    StateMachine(Table&& table, Args&&... args) : table_{std::forward<Table>(table)} {
+        state_.template emplace<initial_state_type>(std::forward<Args>(args)...);
+        state_.visit([](auto&& s) { detail::on_entry(std::forward<decltype(s)>(s)); });
+    }
+
+    ~StateMachine() {
+        state_.visit([](auto&& s) { detail::on_exit(std::forward<decltype(s)>(s)); });
+    }
 
   private:
     Table table_;
+    op::repack<state_types, Variant> state_;
 };
 
 } // namespace state_machine
