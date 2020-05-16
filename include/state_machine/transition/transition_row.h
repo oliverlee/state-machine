@@ -3,7 +3,7 @@
 #include "state_machine/backport.h"
 #include "state_machine/containers.h"
 #include "state_machine/traits.h"
-#include "state_machine/transition.h"
+#include "state_machine/transition/transition.h"
 
 #include <limits>
 #include <tuple>

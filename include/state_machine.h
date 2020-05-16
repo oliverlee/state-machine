@@ -1,12 +1,8 @@
 #pragma once
 
-#include "state_machine/transition.h"
-#include "state_machine/transition_row.h"
-#include "state_machine/transition_table.h"
+#include "state_machine/transition/transition.h"
 
 namespace state_machine {
-
-using transition::make_transition;
 
 namespace placeholder {
 constexpr auto _ = transition::empty_placeholder;

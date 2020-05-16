@@ -1,13 +1,15 @@
 #include "state_machine.h"
+#include "state_machine/transition/transition.h"
 
 #include "gtest/gtest.h"
 #include <type_traits>
 
 namespace {
 using ::state_machine::event;
-using ::state_machine::make_transition;
 using ::state_machine::state;
 using ::state_machine::placeholder::_;
+
+using ::state_machine::transition::make_transition;
 
 struct s1 {};
 struct s2 {};
