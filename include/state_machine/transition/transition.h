@@ -59,12 +59,12 @@ using is_action =
 } // namespace detail
 
 template <class T>
-struct has_nothrow_guard
+struct is_nothrow_guard_invocable
     : stdx::bool_constant<noexcept(std::declval<T>().invoke_guard(
           std::declval<typename T::source_type>(), std::declval<typename T::event_type>()))> {};
 
 template <class T>
-struct has_nothrow_action
+struct is_nothrow_action_invocable
     : stdx::bool_constant<noexcept(std::declval<T>().invoke_action(
           std::declval<typename T::source_type&>(), std::declval<typename T::event_type&>()))> {};
 
@@ -229,6 +229,9 @@ constexpr auto make_transition(Source, Event, Guard&& guard, Action&& action, De
     return Transition<Source, Event, UpdatedGuard, UpdatedAction, UpdatedDestination>{
         std::forward<UpdatedGuard>(updated_guard), std::forward<UpdatedAction>(updated_action)};
 }
+
+template <class T>
+using is_transition = aux::is_specialization_of<Transition, T>;
 
 } // namespace transition
 } // namespace state_machine
