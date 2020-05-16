@@ -13,6 +13,21 @@
 namespace state_machine {
 namespace transition {
 
+using ::state_machine::containers::list;
+namespace op = ::state_machine::containers::op;
+
+namespace detail {
+
+template <class T>
+struct get_destination {
+    using type = typename T::destination_type;
+};
+
+template <class T>
+using is_not_void = stdx::negation<std::is_void<T>>;
+
+} // namespace detail
+
 template <class T, class... Ts>
 class Row {
   public:
@@ -27,6 +42,9 @@ class Row {
     using key_type = typename T::key_type;
     using source_type = typename T::source_type;
     using event_type = typename T::event_type;
+    using destination_types =
+        op::filter<detail::is_not_void,
+                   op::make_unique<op::map<detail::get_destination, list<T, Ts...>>>>;
     using data_type = std::tuple<T, Ts...>;
     static constexpr size_t size = 1 + sizeof...(Ts);
 

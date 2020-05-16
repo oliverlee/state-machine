@@ -52,6 +52,9 @@ package_add_test(test_transition_row
 package_add_test(test_transition_table
     test_transition_table.cc)
 
+package_add_test(test_state_machine
+    test_state_machine.cc)
+
 package_add_test(test_variant
     test_variant.cc)
 

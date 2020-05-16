@@ -11,7 +11,9 @@
 
 namespace state_machine {
 namespace transition {
+
 using ::state_machine::containers::index_map;
+using ::state_machine::containers::list;
 namespace op = ::state_machine::containers::op;
 
 template <class R, class... Rs>
@@ -63,8 +65,23 @@ constexpr auto make_table_from_transition_args(
 namespace detail {
 
 template <class T>
-struct extract_key {
+struct get_key {
     using type = std::pair<typename T::first_type::key_type, typename T::second_type>;
+};
+
+template <class R>
+struct get_source {
+    using type = typename R::source_type;
+};
+
+template <class R>
+struct get_event {
+    using type = typename R::event_type;
+};
+
+template <class R>
+struct get_destinations {
+    using type = typename R::destination_types;
 };
 
 } // namespace detail
@@ -73,7 +90,11 @@ template <class R, class... Rs>
 class Table {
   public:
     using type = Table<R, Rs...>;
-    using row_index_map = op::map<detail::extract_key, index_map<R, Rs...>>;
+    using row_index_map = op::map<detail::get_key, index_map<R, Rs...>>;
+    using event_types = op::make_unique<op::map<detail::get_event, list<R, Rs...>>>;
+    using state_types = op::make_unique<
+        op::flatten<list<op::map<detail::get_source, list<R, Rs...>>,
+                         op::flatten<op::map<detail::get_destinations, list<R, Rs...>>>>>>;
     using data_type = std::tuple<R, Rs...>;
     static constexpr size_t size = 1 + sizeof...(Rs);
 
