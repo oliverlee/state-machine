@@ -39,7 +39,7 @@ class Row {
 
     template <class U>
     constexpr auto append(U&& transition) && noexcept {
-        static_assert(is_transition<U>::value, "");
+        static_assert(is_transition<U>::value, "A `Row` must be composed of `Transition`s.");
 
         return std::move(*this).append_impl(std::forward<U>(transition),
                                             std::make_index_sequence<size>{});
@@ -77,8 +77,9 @@ class Row {
 
 template <class T, class... Ts>
 constexpr auto make_row(T&& first, Ts&&... others) noexcept {
-    static_assert(is_transition<T>::value, "");
-    static_assert(stdx::conjunction<is_transition<Ts>...>::value, "");
+    static_assert(is_transition<T>::value, "A `Row` must be composed of `Transition`s.");
+    static_assert(stdx::conjunction<is_transition<Ts>...>::value,
+                  "A `Row` must be composed of `Transition`s.");
 
     return Row<T, Ts...>(std::forward<T>(first), std::forward<Ts>(others)...);
 }
