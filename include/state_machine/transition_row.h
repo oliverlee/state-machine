@@ -17,7 +17,7 @@ template <class T>
 using is_transition = aux::is_specialization_of<Transition, T>;
 
 template <class T, class... Ts>
-class Row : public std::tuple<T, Ts...> {
+class Row {
   public:
     static_assert(is_transition<T>::value, "A `Row` must be composed of `Transition`s.");
     static_assert(stdx::conjunction<is_transition<Ts>...>::value,
@@ -30,11 +30,15 @@ class Row : public std::tuple<T, Ts...> {
     using key_type = typename T::key_type;
     using source_type = typename T::source_type;
     using event_type = typename T::event_type;
+    using data_type = std::tuple<T, Ts...>;
     static constexpr size_t size = 1 + sizeof...(Ts);
 
     constexpr Row(T&& first, Ts&&... others) noexcept
-        : std::tuple<T, Ts...>{
-              std::make_tuple(std::forward<T>(first), std::forward<Ts>(others)...)} {}
+        : data_{std::make_tuple(std::forward<T>(first), std::forward<Ts>(others)...)} {}
+
+    constexpr auto data() const noexcept -> const data_type& { return data_; }
+
+    constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
     auto find_transition(const source_type& source, const event_type& event) const
         noexcept(stdx::conjunction<has_nothrow_guard<T>, has_nothrow_guard<Ts>...>::value)
@@ -46,7 +50,7 @@ class Row : public std::tuple<T, Ts...> {
     template <class R, class S, class E, size_t I, size_t... Is>
     static constexpr auto
     find_transition_impl(R self, S source, E event, std::index_sequence<I, Is>...) -> size_t {
-        return std::get<I>(self).invoke_guard(source, event) ?
+        return std::get<I>(self.data_).invoke_guard(source, event) ?
                    I :
                    find_transition_impl(self, source, event, std::index_sequence<Is...>{});
     }
@@ -54,10 +58,12 @@ class Row : public std::tuple<T, Ts...> {
     template <class R, class S, class E, size_t I>
     static constexpr auto find_transition_impl(R self, S source, E event, std::index_sequence<I>)
         -> size_t {
-        return std::get<I>(self).invoke_guard(source, event) ?
+        return std::get<I>(self.data_).invoke_guard(source, event) ?
                    I :
                    std::numeric_limits<size_t>::max(); // TODO : replace with optional?
     }
+
+    data_type data_;
 };
 
 
@@ -74,7 +80,7 @@ namespace detail {
 template <class... Ts, class T, size_t... Is>
 constexpr auto
 update_row_impl(Row<Ts...>&& row, T&& transition, std::index_sequence<Is>...) noexcept {
-    return Row<Ts..., T>(std::get<Is>(std::move(row))..., std::forward<T>(transition));
+    return Row<Ts..., T>(std::get<Is>(std::move(row).into_data())..., std::forward<T>(transition));
 }
 
 } // namespace detail
