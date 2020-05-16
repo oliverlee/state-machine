@@ -27,6 +27,41 @@ constexpr auto make_table(R&& first, Rs&&... others) noexcept {
 
 namespace detail {
 
+template <class Tb>
+constexpr auto from_transition_args_impl(Tb&& table) noexcept {
+    return std::forward<Tb>(table);
+}
+
+template <class Tb, class A1, class A2, class A3, class A4, class A5, class... Ts>
+constexpr auto from_transition_args_impl(
+    Tb&& table, A1&& a1, A2&& a2, A3&& a3, A4&& a4, A5&& a5, Ts&&... args) noexcept {
+    return from_transition_args_impl(
+        std::forward<Tb>(table).update(make_transition(std::forward<A1>(a1),
+                                                       std::forward<A2>(a2),
+                                                       std::forward<A3>(a3),
+                                                       std::forward<A4>(a4),
+                                                       std::forward<A5>(a5))),
+        std::forward<Ts>(args)...);
+}
+
+} // namespace detail
+
+template <class A1, class A2, class A3, class A4, class A5, class... Ts>
+constexpr auto make_table_from_transition_args(
+    A1&& a1, A2&& a2, A3&& a3, A4&& a4, A5&& a5, Ts&&... args) noexcept {
+    static_assert(sizeof...(Ts) % 5 == 0, "The number of args must be a multiple of 5.");
+
+    return detail::from_transition_args_impl(
+        make_table(make_row(make_transition(std::forward<A1>(a1),
+                                            std::forward<A2>(a2),
+                                            std::forward<A3>(a3),
+                                            std::forward<A4>(a4),
+                                            std::forward<A5>(a5)))),
+        std::forward<Ts>(args)...);
+}
+
+namespace detail {
+
 template <class T>
 struct extract_key {
     using type = std::pair<typename T::first_type::key_type, typename T::second_type>;
@@ -50,7 +85,7 @@ class Table {
     constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
     template <class T>
-    constexpr auto update(T&& transition) && noexcept {
+        constexpr auto update(T&& transition) && noexcept {
         static_assert(is_transition<T>::value, "Argument to `update` must be a `Transition`.");
 
         return std::move(*this).update_impl(std::move(transition),
@@ -62,7 +97,7 @@ class Table {
               size_t... Is,
               std::enable_if_t<!row_index_map::template contains_key<typename T::key_type>::value,
                                int> = 0>
-    constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
+        constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
         return make_table(std::get<Is>(std::move(*this).into_data())...,
                           make_row(std::forward<T>(transition)));
     }
@@ -71,7 +106,7 @@ class Table {
               size_t... Is,
               std::enable_if_t<row_index_map::template contains_key<typename T::key_type>::value,
                                int> = 0>
-    constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
+        constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
         constexpr size_t Index = row_index_map::template at_key<typename T::key_type>::value;
 
         return std::move(*this).template update_table_row<T, Index>(
@@ -81,9 +116,10 @@ class Table {
     }
 
     template <class T, size_t Index, size_t... Left, size_t... Right>
-    constexpr auto update_table_row(T&& transition,
-                                    std::index_sequence<Left...>,
-                                    std::index_sequence<Right...>) && noexcept {
+        constexpr auto update_table_row(T&& transition,
+                                        std::index_sequence<Left...>,
+                                        std::index_sequence<Right...>) &&
+        noexcept {
         auto data = std::move(*this).into_data();
         return make_table(std::get<Left>(std::move(data))...,
                           std::get<Index>(std::move(data)).append(std::forward<T>(transition)),

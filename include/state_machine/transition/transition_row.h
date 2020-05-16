@@ -38,7 +38,7 @@ class Row {
     constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
     template <class U>
-    constexpr auto append(U&& transition) && noexcept {
+        constexpr auto append(U&& transition) && noexcept {
         static_assert(is_transition<U>::value, "A `Row` must be composed of `Transition`s.");
 
         return std::move(*this).append_impl(std::forward<U>(transition),
@@ -53,7 +53,7 @@ class Row {
 
   private:
     template <class U, size_t... Is>
-    constexpr auto append_impl(U&& transition, std::index_sequence<Is...>) && noexcept {
+        constexpr auto append_impl(U&& transition, std::index_sequence<Is...>) && noexcept {
         return Row<T, Ts..., U>(std::get<Is>(std::move(*this).into_data())...,
                                 std::forward<U>(transition));
     }
