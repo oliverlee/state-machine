@@ -2,6 +2,7 @@
 
 #include "state_machine/transition.h"
 #include "state_machine/transition_row.h"
+#include "state_machine/transition_table.h"
 
 namespace state_machine {
 
