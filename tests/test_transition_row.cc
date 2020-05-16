@@ -71,12 +71,11 @@ TEST(transition_row, update_row) {
     auto row2 = update_row(std::move(row1), t2());
     static_assert(decltype(row2)::size == 2, "");
 
-    // update_row inserts the new transition at the front
-    EXPECT_TRUE(std::get<1>(row2).guard(e1{1}));
-    EXPECT_FALSE(std::get<1>(row2).guard(e1{0}));
+    EXPECT_TRUE(std::get<0>(row2).guard(e1{1}));
+    EXPECT_FALSE(std::get<0>(row2).guard(e1{0}));
 
-    EXPECT_FALSE(std::get<0>(row2).guard(e1{1}));
-    EXPECT_TRUE(std::get<0>(row2).guard(e1{0}));
+    EXPECT_FALSE(std::get<1>(row2).guard(e1{1}));
+    EXPECT_TRUE(std::get<1>(row2).guard(e1{0}));
 }
 
 TEST(transition_row, key_type) {

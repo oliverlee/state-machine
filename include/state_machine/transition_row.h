@@ -74,7 +74,7 @@ namespace detail {
 template <class... Ts, class T, size_t... Is>
 constexpr auto
 update_row_impl(Row<Ts...>&& row, T&& transition, std::index_sequence<Is>...) noexcept {
-    return Row<T, Ts...>(std::forward<T>(transition), std::get<Is>(std::move(row))...);
+    return Row<Ts..., T>(std::get<Is>(std::move(row))..., std::forward<T>(transition));
 }
 
 } // namespace detail
