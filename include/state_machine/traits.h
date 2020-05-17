@@ -24,5 +24,30 @@ using is_copy_or_move_constructible =
 template <std::size_t I>
 using index_constant = std::integral_constant<std::size_t, I>;
 
+
+// https://stackoverflow.com/questions/20874388/error-spliting-an-stdindex-sequence
+namespace detail {
+
+template <typename T, typename Seq, T Begin>
+struct make_integer_range_impl;
+
+template <typename T, T... Ints, T Begin>
+struct make_integer_range_impl<T, std::integer_sequence<T, Ints...>, Begin> {
+    using type = std::integer_sequence<T, Begin + Ints...>;
+};
+
+} // namespace detail
+
+/* Similar to std::make_integer_sequence<>, except it goes from [Begin, End)
+   instead of [0, End). */
+template <typename T, T Begin, T End>
+using make_integer_range = typename detail::
+    make_integer_range_impl<T, std::make_integer_sequence<T, End - Begin>, Begin>::type;
+
+/* Similar to std::make_index_sequence<>, except it goes from [Begin, End)
+   instead of [0, End). */
+template <std::size_t Begin, std::size_t End>
+using make_index_range = make_integer_range<std::size_t, Begin, End>;
+
 } // namespace aux
 } // namespace state_machine

@@ -133,7 +133,7 @@ class Table {
         return std::move(*this).template update_table_row<T, Index>(
             std::forward<T>(transition),
             std::make_index_sequence<Index>{},
-            std::make_index_sequence<size - Index - 1>{});
+            aux::make_index_range<Index + 1, size>{});
     }
 
     template <class T, size_t Index, size_t... Left, size_t... Right>
@@ -144,7 +144,7 @@ class Table {
         auto data = std::move(*this).into_data();
         return make_table(std::get<Left>(std::move(data))...,
                           std::get<Index>(std::move(data)).append(std::forward<T>(transition)),
-                          std::get<Right + Index + 1>(std::move(data))...);
+                          std::get<Right>(std::move(data))...);
     }
 
     std::tuple<R, Rs...> data_;
