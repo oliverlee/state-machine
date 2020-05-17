@@ -29,11 +29,6 @@ struct e3 {
     int value;
 };
 
-struct always {
-    constexpr always(){};
-    constexpr auto operator()() const noexcept -> bool { return true; }
-};
-
 template <int N>
 struct e3_greater_than {
     constexpr e3_greater_than(){};
@@ -44,11 +39,6 @@ template <int N>
 struct e3_less_than {
     constexpr e3_less_than(){};
     constexpr auto operator()(const e3& e) const noexcept -> bool { return e.value < N; }
-};
-
-struct noaction {
-    constexpr noaction(){};
-    constexpr auto operator()() const noexcept -> void { return; }
 };
 
 struct return_s2 {
@@ -70,12 +60,12 @@ struct return_s3_e3 {
 constexpr auto generate_table() noexcept {
     // clang-format off
     return make_table_from_transition_args(
-        state<s1>, event<e2>, always{}, return_s2{}, state<s2>,
-        state<s1>, event<e1>, always{}, noaction{}, _,
-        state<s1>, event<e2>, always{}, return_s3<3>{}, state<s3>,
-        state<s1>, event<e3>, always{}, return_s3_e3{}, state<s3>,
-        state<s3>, event<e3>, e3_greater_than<0>{}, return_s2{}, state<s2>,
-        state<s3>, event<e3>, e3_less_than<1>{}, return_s3<0>{}, state<s3>);
+        state<s1>, event<e2>,                    _,    return_s2{}, state<s2>,
+        state<s1>, event<e1>,                    _,             _,          _,
+        state<s1>, event<e2>,                    _, return_s3<3>{}, state<s3>,
+        state<s1>, event<e3>,                    _, return_s3_e3{}, state<s3>,
+        state<s3>, event<e3>, e3_greater_than<0>{},    return_s2{}, state<s2>,
+        state<s3>, event<e3>,    e3_less_than<1>{}, return_s3<0>{}, state<s3>);
     // clang-format on
 }
 
@@ -106,8 +96,7 @@ TEST(state_machine, emplace_initial_state) {
     };
 
     const auto generate_table = []() noexcept {
-        return make_table_from_transition_args(
-            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+        return make_table_from_transition_args(state<s4>, event<e2>, _, return_s2{}, state<s2>);
     };
 
     StateMachine<decltype(generate_table())> sm{generate_table(), 10};
@@ -122,8 +111,7 @@ TEST(state_machine, on_entry_initial_state) {
     };
 
     const auto generate_table = []() noexcept {
-        return make_table_from_transition_args(
-            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+        return make_table_from_transition_args(state<s4>, event<e2>, _, return_s2{}, state<s2>);
     };
 
 
@@ -144,8 +132,7 @@ TEST(state_machine, on_exit_state_sm_dtor) {
     };
 
     const auto generate_table = []() noexcept {
-        return make_table_from_transition_args(
-            state<s4>, event<e2>, always{}, return_s2{}, state<s2>);
+        return make_table_from_transition_args(state<s4>, event<e2>, _, return_s2{}, state<s2>);
     };
 
 
