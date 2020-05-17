@@ -94,13 +94,15 @@ TEST(transition_row, find_guard_success) {
     {
         ASSERT_TRUE(std::get<0>(row.data()).guard(e1{1}));
         const auto index = row.find_transition(s1{}, e1{1});
-        EXPECT_EQ(index, 0);
+        ASSERT_TRUE(index);
+        EXPECT_EQ(*index, 0);
     }
 
     {
         ASSERT_TRUE(std::get<1>(row.data()).guard(e1{0}));
         const auto index = row.find_transition(s1{}, e1{0});
-        EXPECT_EQ(index, 1);
+        ASSERT_TRUE(index);
+        EXPECT_EQ(*index, 1);
     }
 }
 
@@ -110,6 +112,5 @@ TEST(transition_row, find_guard_failure) {
 
     ASSERT_FALSE(std::get<0>(row.data()).guard(e1{0}));
     const auto index = row.find_transition(s1{}, e1{0});
-    EXPECT_NE(index, 0);
-    EXPECT_EQ(index, std::numeric_limits<size_t>::max());
+    ASSERT_FALSE(index);
 }

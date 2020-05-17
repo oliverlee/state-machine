@@ -2,6 +2,7 @@
 
 #include "state_machine/backport.h"
 #include "state_machine/containers.h"
+#include "state_machine/optional.h"
 #include "state_machine/traits.h"
 #include "state_machine/transition/transition.h"
 
@@ -14,6 +15,7 @@ namespace state_machine {
 namespace transition {
 
 using ::state_machine::containers::list;
+using ::state_machine::optional::optional;
 namespace op = ::state_machine::containers::op;
 
 namespace detail {
@@ -65,7 +67,7 @@ class Row {
 
     auto find_transition(const source_type& source, const event_type& event) const noexcept(
         stdx::conjunction<is_nothrow_guard_invocable<T>, is_nothrow_guard_invocable<Ts>...>::value)
-        -> size_t {
+        -> optional<size_t> {
         return find_transition_impl(source, event, std::make_index_sequence<size>{});
     }
 
@@ -77,15 +79,15 @@ class Row {
     }
 
     template <class S, class E>
-    constexpr auto find_transition_impl(S, E, std::index_sequence<>) const -> size_t {
-        return std::numeric_limits<size_t>::max(); // TODO : replace with optional?
+    constexpr auto find_transition_impl(S, E, std::index_sequence<>) const -> optional<size_t> {
+        return {};
     }
 
     template <class S, class E, size_t I, size_t... Is>
     constexpr auto find_transition_impl(S source, E event, std::index_sequence<I, Is...>) const
-        -> size_t {
+        -> optional<size_t> {
         return std::get<I>(data_).invoke_guard(source, event) ?
-                   I :
+                   optional<size_t>{I} :
                    find_transition_impl(source, event, std::index_sequence<Is...>{});
     }
 

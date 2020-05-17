@@ -1,6 +1,7 @@
 #pragma once
 
 #include "state_machine/containers.h"
+#include "state_machine/optional.h"
 #include "state_machine/traits.h"
 #include "state_machine/transition/transition_table.h"
 #include "state_machine/variant.h"
@@ -13,6 +14,8 @@
 namespace state_machine {
 namespace state_machine {
 
+using ::state_machine::optional::nullopt;
+using ::state_machine::optional::optional;
 using ::state_machine::variant::Variant;
 namespace op = ::state_machine::containers::op;
 
@@ -76,7 +79,7 @@ class StateMachine {
     }
 
     template <class Event, std::enable_if_t<op::contains<Event, event_types>::value, int> = 0>
-    auto process_event(Event &&) -> size_t {
+    auto process_event(Event &&) -> optional<size_t> {
         auto row_index = find_row<Event>(state_.index());
 
         // TODO: change return type once side effects are tested
@@ -93,7 +96,7 @@ class StateMachine {
     using index_type = typename variant_type::index_type;
 
     template <class Event>
-    constexpr auto find_row(index_type state_index) const -> size_t {
+    constexpr auto find_row(index_type state_index) const -> optional<size_t> {
         static_assert(variant_type::template alternative_index<variant::empty>() == 0, "");
 
         if (state_index == 0) {
@@ -106,23 +109,29 @@ class StateMachine {
     }
 
     template <class Event>
-    constexpr auto find_row_impl(index_type, std::index_sequence<>) const -> size_t {
-        return std::numeric_limits<size_t>::max(); // TODO: replace with optional
+    constexpr auto find_row_impl(index_type, std::index_sequence<>) const -> optional<size_t> {
+        return {};
     }
 
     template <class Event, size_t I, size_t... Is>
     constexpr auto find_row_impl(index_type state_index, std::index_sequence<I, Is...>) const
-        -> size_t {
+        -> optional<size_t> {
 
         using state_type =
             typename variant_type::alternative_index_map::template at_value<aux::index_constant<I>>;
 
         using key_type = transition::Key<transition::State<state_type>, transition::Event<Event>>;
 
-        constexpr size_t row_index =
+        constexpr size_t row_index_lookup =
             std::conditional_t<Table::row_index_map::template contains_key<key_type>::value,
                                typename Table::row_index_map::template at_key<key_type>,
                                aux::index_constant<std::numeric_limits<size_t>::max()>>::value;
+
+        // conditional_t returns an `index_constant` type, of which the value is extracted. Now we
+        // can convert to a nicer type to work with and forget about sentinel values.
+        constexpr auto row_index = row_index_lookup == std::numeric_limits<size_t>::max() ?
+                                       optional<size_t>{} :
+                                       optional<size_t>{row_index_lookup};
 
         return (state_index == aux::index_constant<I>::value) ?
                    row_index :
