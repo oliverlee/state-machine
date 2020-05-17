@@ -1,11 +1,11 @@
 #pragma once
 
 #include "state_machine/containers.h"
-#include "state_machine/optional.h"
 #include "state_machine/traits.h"
 #include "state_machine/transition/transition_table.h"
 #include "state_machine/variant.h"
 
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <tuple>
@@ -14,8 +14,6 @@
 namespace state_machine {
 namespace state_machine {
 
-using ::state_machine::optional::nullopt;
-using ::state_machine::optional::optional;
 using ::state_machine::variant::Variant;
 namespace op = ::state_machine::containers::op;
 
@@ -56,6 +54,9 @@ static auto on_exit(T& t) noexcept(noexcept(std::declval<T>().on_exit())) -> voi
 // state.
 class bad_state_access : public std::exception {};
 
+// The return type for `StateMachine::process_event`.
+enum process_status : uint8_t { Completed, EventIgnored, GuardFailure, UndefinedTransition };
+
 template <class Table>
 class StateMachine {
     static_assert(transition::is_table<Table>::value,
@@ -79,11 +80,16 @@ class StateMachine {
     }
 
     template <class Event, std::enable_if_t<op::contains<Event, event_types>::value, int> = 0>
-    auto process_event(Event &&) -> optional<size_t> {
-        auto row_index = find_row<Event>(state_.index());
+    auto process_event(Event&& event) -> process_status {
+        static_assert(variant_type::template alternative_index<variant::empty>() == 0, "");
 
-        // TODO: change return type once side effects are tested
-        return row_index;
+        if (state_.index() == 0) {
+            throw bad_state_access{};
+        }
+
+        // Skip the first "empty" index when searching for the transition row.
+        return find_row(std::forward<Event>(event),
+                        aux::make_index_range<1, 1 + variant_type::size>{});
     }
 
     template <class State, std::enable_if_t<op::contains<State, state_types>::value, int> = 0>
@@ -95,52 +101,93 @@ class StateMachine {
     using variant_type = op::repack<state_types, Variant>;
     using index_type = typename variant_type::index_type;
 
-    template <class Event>
-    constexpr auto find_row(index_type state_index) const -> optional<size_t> {
-        static_assert(variant_type::template alternative_index<variant::empty>() == 0, "");
-
-        if (state_index == 0) {
-            throw bad_state_access{};
-        }
-
-        // Skip the first "empty" index when searching for the transition row.
-        return find_row_impl<Event>(state_index,
-                                    aux::make_index_range<1, 1 + variant_type::size>{});
-    }
+    struct transition_not_found {};
 
     template <class Event>
-    constexpr auto find_row_impl(index_type, std::index_sequence<>) const -> optional<size_t> {
-        return {};
+    constexpr auto find_row(Event&&, std::index_sequence<>) -> process_status {
+        return process_status::UndefinedTransition;
     }
 
     template <class Event, size_t I, size_t... Is>
-    constexpr auto find_row_impl(index_type state_index, std::index_sequence<I, Is...>) const
-        -> optional<size_t> {
-
+    constexpr auto find_row(Event&& event, std::index_sequence<I, Is...>) -> process_status {
         using state_type =
             typename variant_type::alternative_index_map::template at_value<aux::index_constant<I>>;
 
         using key_type = transition::Key<transition::State<state_type>, transition::Event<Event>>;
 
-        constexpr size_t row_index_lookup =
-            std::conditional_t<Table::row_index_map::template contains_key<key_type>::value,
-                               typename Table::row_index_map::template at_key<key_type>,
-                               aux::index_constant<std::numeric_limits<size_t>::max()>>::value;
+        return (state_.index() == I) ?
+                   get_row_transitions(
+                       std::forward<Event>(event),
+                       typename Table::row_index_map::template at_key<key_type,
+                                                                      transition_not_found>{}) :
+                   find_row(std::forward<Event>(event), std::index_sequence<Is...>{});
+    }
 
-        // conditional_t returns an `index_constant` type, of which the value is extracted. Now we
-        // can convert to a nicer type to work with and forget about sentinel values.
-        constexpr auto row_index = row_index_lookup == std::numeric_limits<size_t>::max() ?
-                                       optional<size_t>{} :
-                                       optional<size_t>{row_index_lookup};
+    template <class Event>
+    auto get_row_transitions(Event&&, transition_not_found) -> process_status {
+        return process_status::UndefinedTransition;
+    }
 
-        return (state_index == aux::index_constant<I>::value) ?
-                   row_index :
-                   find_row_impl<Event>(state_index, std::index_sequence<Is...>{});
+    template <class Event,
+              class RowIndexConstant,
+              std::enable_if_t<std::is_same<aux::index_constant<RowIndexConstant::value>,
+                                            RowIndexConstant>::value,
+                               int> = 0>
+    auto get_row_transitions(Event&& event, RowIndexConstant) -> process_status {
+        const auto& row = std::get<RowIndexConstant::value>(table_.data());
+
+        return find_transition(row,
+                               std::forward<Event>(event),
+                               std::make_index_sequence<std::decay_t<decltype(row)>::size>{});
+    }
+
+    template <class Row, class Event>
+    auto find_transition(const Row&, Event&&, std::index_sequence<>) -> process_status {
+        return process_status::GuardFailure;
+    }
+
+    template <class Row, class Event, size_t I, size_t... Is>
+    auto find_transition(const Row& row, Event&& event, std::index_sequence<I, Is...>)
+        -> process_status {
+        const auto& transition = std::get<I>(row.data());
+        const auto& state = state_.template get<typename Row::source_type>();
+
+        return transition.invoke_guard(state, event) ?
+                   do_transition(transition, std::forward<Event>(event)) :
+                   find_transition(row, std::forward<Event>(event), std::index_sequence<Is...>{});
+    }
+
+    // Perform an internal transition
+    template <class Transition, class Event, std::enable_if_t<Transition::internal, int> = 0>
+    auto do_transition(const Transition& transition, Event&& event) -> process_status {
+        // This may miss manually created actions that are used to ignore events.
+        if (std::is_same<typename Transition::action_type,
+                         transition::detail::action_pass>::value) {
+            return process_status::EventIgnored;
+        }
+
+        auto& s = state_.template get<typename Transition::source_type>();
+
+        transition.invoke_action(s, event);
+
+        return process_status::Completed;
+    }
+
+    // Perform an external transition
+    template <class Transition, class Event, std::enable_if_t<!Transition::internal, int> = 0>
+    auto do_transition(const Transition& transition, Event&& event) -> process_status {
+        auto& s = state_.template get<typename Transition::source_type>();
+
+        detail::on_exit(s);
+
+        auto& d = state_.set(transition.invoke_action(s, event));
+
+        detail::on_entry(d);
+
+        return process_status::Completed;
     }
 
     const Table table_;
-
-  public: // TODO: make private once side effects are tested
     variant_type state_;
 };
 

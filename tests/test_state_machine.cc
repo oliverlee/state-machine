@@ -12,6 +12,7 @@ using ::state_machine::state;
 using ::state_machine::placeholder::_;
 
 using ::state_machine::containers::list;
+using ::state_machine::state_machine::process_status;
 using ::state_machine::state_machine::StateMachine;
 using ::state_machine::transition::make_table_from_transition_args;
 
@@ -144,30 +145,39 @@ TEST(state_machine, on_exit_state_sm_dtor) {
     EXPECT_EQ(on_exit_count, 1);
 }
 
-// TODO: replace this test once `process_event` is more complete
-TEST(state_machine, find_row) {
-    StateMachine<decltype(generate_table())> sm{generate_table()};
+TEST(state_machine, process_event) {
+    {
+        StateMachine<decltype(generate_table())> sm{generate_table()};
+        ASSERT_TRUE(sm.is_state<s1>());
 
-    const auto expect_option = [](auto expected, auto result) {
-        ASSERT_TRUE(result);
-        EXPECT_EQ(expected, *result);
-    };
+        // see order of transitions in `generate_table`
+        EXPECT_EQ(process_status::Completed, sm.process_event(e2{}));
+        EXPECT_TRUE(sm.is_state<s2>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s2>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e3{0}));
+        EXPECT_TRUE(sm.is_state<s2>());
+    }
 
-    ASSERT_TRUE(sm.is_state<s1>());
-    // Check row index lookup -- see order of transitions in `generate_table`
-    expect_option(0, sm.process_event(e2{}));
-    expect_option(1, sm.process_event(e1{}));
-    expect_option(2, sm.process_event(e3{0}));
+    {
+        StateMachine<decltype(generate_table())> sm{generate_table()};
+        ASSERT_TRUE(sm.is_state<s1>());
 
-    // Manually change the internal state.
-    sm.state_.emplace<s3>(0);
-    ASSERT_FALSE(sm.process_event(e2{}));
-    ASSERT_FALSE(sm.process_event(e1{}));
-    expect_option(3, sm.process_event(e3{0}));
+        EXPECT_EQ(process_status::EventIgnored, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s1>());
+    }
 
-    // Manually change the internal state.
-    sm.state_.emplace<s2>();
-    ASSERT_FALSE(sm.process_event(e2{}));
-    ASSERT_FALSE(sm.process_event(e1{}));
-    ASSERT_FALSE(sm.process_event(e3{0}));
+    {
+        StateMachine<decltype(generate_table())> sm{generate_table()};
+        ASSERT_TRUE(sm.is_state<s1>());
+        ASSERT_EQ(process_status::Completed, sm.process_event(e3{0}));
+        ASSERT_TRUE(sm.is_state<s3>());
+
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s3>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e2{}));
+        EXPECT_TRUE(sm.is_state<s3>());
+        EXPECT_EQ(process_status::Completed, sm.process_event(e3{0}));
+        EXPECT_TRUE(sm.is_state<s3>());
+    }
 }
