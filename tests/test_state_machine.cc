@@ -156,3 +156,28 @@ TEST(state_machine, on_exit_state_sm_dtor) {
     }
     EXPECT_EQ(on_exit_count, 1);
 }
+
+// TODO: replace this test once `process_event` is more complete
+TEST(state_machine, find_row) {
+    static constexpr size_t NO_ROW = std::numeric_limits<size_t>::max();
+
+    StateMachine<decltype(generate_table())> sm{generate_table()};
+
+    ASSERT_TRUE(sm.is_state<s1>());
+    // Check row index lookup -- see order of transitions in `generate_table`
+    EXPECT_EQ(0, sm.process_event(e2{}));
+    EXPECT_EQ(1, sm.process_event(e1{}));
+    EXPECT_EQ(2, sm.process_event(e3{0}));
+
+    // Manually change the internal state.
+    sm.state_.emplace<s3>(0);
+    EXPECT_EQ(NO_ROW, sm.process_event(e2{}));
+    EXPECT_EQ(NO_ROW, sm.process_event(e1{}));
+    EXPECT_EQ(3, sm.process_event(e3{0}));
+
+    // Manually change the internal state.
+    sm.state_.emplace<s2>();
+    EXPECT_EQ(NO_ROW, sm.process_event(e2{}));
+    EXPECT_EQ(NO_ROW, sm.process_event(e1{}));
+    EXPECT_EQ(NO_ROW, sm.process_event(e3{0}));
+}
