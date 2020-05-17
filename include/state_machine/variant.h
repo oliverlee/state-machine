@@ -155,8 +155,14 @@ class Variant {
         if (holds<empty>()) {
             throw bad_variant_access{};
         }
+
         // Reduce index_ since the first 'empty' type is never visited.
-        return on_alternate<index_map<Ts...>>::invoke(index_ - 1U, storage_, callable);
+        const auto without_empty_index = [](index_type index) -> index_type {
+            return static_cast<index_type>(index - 1);
+        };
+
+        return on_alternate<index_map<Ts...>>::invoke(
+            without_empty_index(index_), storage_, callable);
     }
 
   private:
@@ -165,7 +171,7 @@ class Variant {
 
     template <class Entry>
     struct on_alternate<bijection<Entry>> {
-        static constexpr auto type_destructor(size_t index) noexcept {
+        static constexpr auto type_destructor(index_type index) noexcept {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                    +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
@@ -174,7 +180,7 @@ class Variant {
 
         template <class Callable>
         static constexpr auto
-        invoke(size_t index, storage_type& storage, const Callable& callable) {
+        invoke(index_type index, storage_type& storage, const Callable& callable) {
             if (index != Entry::second_type::value) {
                 throw bad_variant_access{};
             }
@@ -186,7 +192,7 @@ class Variant {
     template <class Entry, class... Entries>
     struct on_alternate<bijection<Entry, Entries...>>
         : private on_alternate<bijection<Entries...>> {
-        static constexpr auto type_destructor(size_t index) noexcept {
+        static constexpr auto type_destructor(index_type index) noexcept {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                    +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
@@ -195,7 +201,7 @@ class Variant {
 
         template <class Callable>
         static constexpr auto
-        invoke(size_t index, storage_type& storage, const Callable& callable) {
+        invoke(index_type index, storage_type& storage, const Callable& callable) {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                        callable(reinterpret_cast<T&>(storage)) :
