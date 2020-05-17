@@ -113,6 +113,20 @@ class Variant {
         return *reinterpret_cast<T*>(std::addressof(storage_));
     }
 
+    //    template <size_t I,
+    //              class T = typename alternative_index_map::template
+    //              at_value<aux::index_constant<I>>, enable_if_key_t<T> = 0>
+    //    auto get() -> T& {
+    //        return get<T>();
+    //    }
+    //
+    //    template <size_t I,
+    //              class T = typename alternative_index_map::template
+    //              at_value<aux::index_constant<I>>, enable_if_key_t<T> = 0>
+    //    auto get() const -> const T& {
+    //        return get<T>();
+    //    }
+
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() noexcept -> T* {
         if (alternative_index<T>() != index()) {
