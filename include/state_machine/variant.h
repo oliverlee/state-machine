@@ -23,8 +23,14 @@ struct empty {};
 
 template <class... Ts>
 class Variant {
+  public:
     using alternative_index_map = index_map<empty, Ts...>;
     using index_type = uint8_t;
+
+    // Number of alternative types, excluding the "empty" type.
+    static constexpr size_t size = sizeof...(Ts);
+
+  private:
     using storage_type = std::aligned_union_t<0, empty, Ts...>;
 
     static_assert(stdx::conjunction<aux::is_copy_or_move_constructible<Ts>...>::value,
@@ -62,7 +68,7 @@ class Variant {
     auto set(T&& t) noexcept(noexcept(std::declval<Variant>().destroy_internal()) &&
                              std::is_nothrow_move_constructible<D>::value) -> D& {
         destroy_internal();
-        index_ = index<D>();
+        index_ = alternative_index<D>();
         return *(new (static_cast<void*>(std::addressof(storage_))) D{std::forward<T>(t)});
     }
 
@@ -74,7 +80,7 @@ class Variant {
     auto set(const T& t) noexcept(noexcept(std::declval<Variant>().destroy_internal()) &&
                                   std::is_nothrow_copy_constructible<D>::value) -> D& {
         destroy_internal();
-        index_ = index<D>();
+        index_ = alternative_index<D>();
         return *(new (static_cast<void*>(std::addressof(storage_))) D{t});
     }
 
@@ -82,18 +88,18 @@ class Variant {
     auto emplace(Args&&... args) noexcept(noexcept(std::declval<Variant>().destroy_internal()) &&
                                           std::is_nothrow_constructible<T>::value) -> T& {
         destroy_internal();
-        index_ = index<T>();
+        index_ = alternative_index<T>();
         return *(new (static_cast<void*>(std::addressof(storage_))) T{std::forward<Args>(args)...});
     }
 
     template <class T, enable_if_key_t<T> = 0>
     constexpr auto holds() const noexcept -> bool {
-        return index<T>() == index_;
+        return alternative_index<T>() == index();
     }
 
     template <class T, enable_if_key_t<T> = 0>
     auto get() -> T& {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             throw bad_variant_access{};
         }
         return *reinterpret_cast<T*>(std::addressof(storage_));
@@ -101,7 +107,7 @@ class Variant {
 
     template <class T, enable_if_key_t<T> = 0>
     auto get() const -> const T& {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             throw bad_variant_access{};
         }
         return *reinterpret_cast<T*>(std::addressof(storage_));
@@ -109,7 +115,7 @@ class Variant {
 
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() noexcept -> T* {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             return nullptr;
         }
         return reinterpret_cast<T*>(std::addressof(storage_));
@@ -117,7 +123,7 @@ class Variant {
 
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() const noexcept -> const T* {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             return nullptr;
         }
         return reinterpret_cast<T*>(std::addressof(storage_));
@@ -128,7 +134,7 @@ class Variant {
                                    std::is_move_constructible<T>::value,
                                int> = 0>
     auto take() -> T {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             throw bad_variant_access{};
         }
         auto retval = std::move(*reinterpret_cast<T*>(std::addressof(storage_)));
@@ -141,7 +147,7 @@ class Variant {
                                    !std::is_move_constructible<T>::value,
                                int> = 0>
     auto take() -> const T {
-        if (index<T>() != index_) {
+        if (alternative_index<T>() != index()) {
             throw bad_variant_access{};
         }
         const auto retval = *reinterpret_cast<T*>(std::addressof(storage_));
@@ -156,13 +162,20 @@ class Variant {
             throw bad_variant_access{};
         }
 
-        // Reduce index_ since the first 'empty' type is never visited.
+        // Reduce index since the first 'empty' type is never visited.
         const auto without_empty_index = [](index_type index) -> index_type {
             return static_cast<index_type>(index - 1);
         };
 
         return on_alternate<index_map<Ts...>>::invoke(
-            without_empty_index(index_), storage_, callable);
+            without_empty_index(index()), storage_, callable);
+    }
+
+    constexpr auto index() const noexcept -> index_type { return index_; }
+
+    template <class T, enable_if_key_t<T> = 0>
+    static constexpr auto alternative_index() noexcept {
+        return static_cast<index_type>(alternative_index_map::template at_key<T>::value);
     }
 
   private:
@@ -208,11 +221,6 @@ class Variant {
                        on_alternate<bijection<Entries...>>::invoke(index, storage, callable);
         }
     };
-
-    template <class T, enable_if_key_t<T> = 0>
-    static constexpr auto index() noexcept {
-        return static_cast<index_type>(alternative_index_map::template at_key<T>::value);
-    }
 
     auto destroy_internal() noexcept(stdx::disjunction<std::is_nothrow_destructible<Ts>...>::value)
         -> void {
