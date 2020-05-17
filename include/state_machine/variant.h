@@ -155,7 +155,8 @@ class Variant {
         if (holds<empty>()) {
             throw bad_variant_access{};
         }
-        return on_alternate<index_map<Ts...>>::invoke(index_, storage_, callable);
+        // Reduce index_ since the first 'empty' type is never visited.
+        return on_alternate<index_map<Ts...>>::invoke(index_ - 1U, storage_, callable);
     }
 
   private:
