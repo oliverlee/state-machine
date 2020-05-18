@@ -13,10 +13,22 @@ namespace sm = state_machine;
 enum class DiskType { CD, DVD };
 
 // states
-struct Stopped {};
-struct Open {};
-struct Empty {};
-struct Playing {};
+struct Stopped {
+    void on_entry() { std::cout << "entering: Stopped" << std::endl; }
+    void on_exit() { std::cout << "leaving: Stopped" << std::endl; }
+};
+struct Open {
+    void on_entry() { std::cout << "entering: Open" << std::endl; }
+    void on_exit() { std::cout << "leaving: Open" << std::endl; }
+};
+struct Empty {
+    void on_entry() { std::cout << "entering: Empty" << std::endl; }
+    void on_exit() { std::cout << "leaving: Empty" << std::endl; }
+};
+struct Playing {
+    void on_entry() { std::cout << "entering: Playing" << std::endl; }
+    void on_exit() { std::cout << "leaving: Playing" << std::endl; }
+};
 struct Paused {};
 
 // events
@@ -32,9 +44,9 @@ struct cd_detected {
 };
 
 // actions
-// The transition table requires actions to create the destination state as this is how we can transfer
-// "extended/internal" state between actual states (e.g. a large buffer of data from a `receive` state to a `process`
-// state).
+// The transition table requires actions to create the destination state as this is how we can
+// transfer "extended/internal" state between actual states (e.g. a large buffer of data from a
+// `receive` state to a `process` state).
 const auto start_playback = []() {
     std::cout << "player::start_playback\n";
     return Playing{};
