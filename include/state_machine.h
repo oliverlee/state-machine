@@ -1,5 +1,6 @@
 #pragma once
 
+#include "state_machine/state_machine.h"
 #include "state_machine/transition/transition.h"
 
 namespace state_machine {

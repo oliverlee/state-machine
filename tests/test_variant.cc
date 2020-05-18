@@ -198,3 +198,28 @@ TEST(variant, visit_empty) {
 
     EXPECT_THROW(v.visit([](auto& a) { return a.value; }), bad_variant_access);
 }
+
+namespace visit {
+struct C {
+    static constexpr int value = 1;
+};
+constexpr int C::value;
+
+struct D {
+    static constexpr int value = 2;
+};
+constexpr int D::value;
+} // namespace visit
+
+TEST(variant, visit_type_index) {
+    using visit::C;
+    using visit::D;
+
+    Variant<C, D> v{};
+
+    v.emplace<C>();
+    EXPECT_EQ(v.visit([](auto a) { return a.value; }), C::value);
+
+    v.emplace<D>();
+    EXPECT_EQ(v.visit([](auto a) { return a.value; }), D::value);
+}

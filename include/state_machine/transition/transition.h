@@ -189,6 +189,16 @@ constexpr auto empty_placeholder = identity<detail::empty>{};
 
 namespace detail {
 
+// A guard that always succeeds.
+struct guard_always {
+    constexpr auto operator()() const noexcept -> bool { return true; }
+};
+
+// An action that does nothing.
+struct action_pass {
+    constexpr auto operator()() const noexcept -> void { return; }
+};
+
 template <class T>
 struct is_empty_placeholder
     : std::is_same<std::decay_t<decltype(empty_placeholder)>, std::decay_t<T>> {};
@@ -200,7 +210,7 @@ auto create_guard_if_empty(Guard&& guard) {
 
 template <class Guard, std::enable_if_t<is_empty_placeholder<Guard>::value, int> = 0>
 auto create_guard_if_empty(Guard&&) {
-    return [] { return true; };
+    return guard_always{};
 }
 
 template <class Action, std::enable_if_t<!is_empty_placeholder<Action>::value, int> = 0>
@@ -210,7 +220,7 @@ auto create_action_if_empty(Action&& action) {
 
 template <class Action, std::enable_if_t<is_empty_placeholder<Action>::value, int> = 0>
 auto create_action_if_empty(Action&&) {
-    return [] {};
+    return action_pass{};
 }
 
 } // namespace detail

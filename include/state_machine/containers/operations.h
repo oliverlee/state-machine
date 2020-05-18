@@ -117,6 +117,46 @@ struct map_impl<Func, L<Rs...>> : L<Rs...> {};
 template <template <class> class Func, class L>
 using map = typename detail::map_impl_input<Func, L>::type;
 
+
+namespace detail {
+
+template <class A, template <class...> class B>
+struct repack_impl;
+
+template <template <class...> class A, class... Ts, template <class...> class B>
+struct repack_impl<A<Ts...>, B> {
+    using type = B<Ts...>;
+};
+
+} // namespace detail
+
+// Given A<Ts...>, return B<Ts...>.
+template <class A, template <class...> class B>
+using repack = typename detail::repack_impl<A, B>::type;
+
+
+namespace detail {
+
+template <class L>
+struct flatten_impl_input;
+template <class L1, class L2>
+struct flatten_impl;
+
+template <template <class...> class L, class... Ts>
+struct flatten_impl_input<L<Ts...>> : flatten_impl<L<>, L<Ts...>> {};
+
+template <template <class...> class L, class... Rs, class... Ts, class... Ss>
+struct flatten_impl<L<Rs...>, L<L<Ts...>, Ss...>> : flatten_impl<L<Rs..., Ts...>, L<Ss...>> {};
+
+template <template <class...> class L, class... Rs>
+struct flatten_impl<L<Rs...>, L<>> : L<Rs...> {};
+
+} // namespace detail
+
+// Given L<A<As...>, B<Bs....>, ...> return L<As..., Bs..., ...>.
+template <class L>
+using flatten = typename detail::flatten_impl_input<L>::type;
+
 } // namespace operations
 } // namespace containers
 } // namespace state_machine
