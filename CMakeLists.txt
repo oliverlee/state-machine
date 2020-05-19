@@ -55,9 +55,8 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-add_executable(example
-    examples/main.cc
-)
 
-target_include_directories(example PUBLIC include)
-target_compile_options(example PRIVATE ${DEFAULT_CXX_OPTIONS})
+option(BUILD_EXAMPLES "Build examples" ON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
