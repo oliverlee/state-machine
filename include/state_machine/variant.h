@@ -53,8 +53,25 @@ class Variant {
 
     Variant(const Variant&) = delete;
     Variant& operator=(const Variant&) = delete;
-    Variant(Variant&&) = delete;
-    Variant& operator=(Variant&& other) = delete;
+
+    Variant(Variant&& rhs) noexcept(
+        stdx::conjunction<std::is_nothrow_move_constructible<Ts>...>::value) {
+        if (!rhs.holds<empty>()) {
+            rhs.visit([this](auto&& s) {
+                this->set<std::remove_reference_t<decltype(s)>>(std::move(s));
+            });
+        }
+    }
+
+    auto operator=(Variant&& rhs) noexcept(
+        stdx::conjunction<std::is_nothrow_move_assignable<Ts>...>::value) -> Variant& {
+        // The double move is used to handle self-assignment.
+        auto temp = Variant{std::move(rhs)};
+        if (!temp.template holds<empty>()) {
+            temp.visit([this](auto&& s) { this->set(std::move(s)); });
+        }
+        return *this;
+    }
 
     ~Variant() noexcept(noexcept(std::declval<Variant>().destroy_internal())) {
         destroy_internal();
@@ -113,20 +130,6 @@ class Variant {
         return *reinterpret_cast<T*>(std::addressof(storage_));
     }
 
-    //    template <size_t I,
-    //              class T = typename alternative_index_map::template
-    //              at_value<aux::index_constant<I>>, enable_if_key_t<T> = 0>
-    //    auto get() -> T& {
-    //        return get<T>();
-    //    }
-    //
-    //    template <size_t I,
-    //              class T = typename alternative_index_map::template
-    //              at_value<aux::index_constant<I>>, enable_if_key_t<T> = 0>
-    //    auto get() const -> const T& {
-    //        return get<T>();
-    //    }
-
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() noexcept -> T* {
         if (alternative_index<T>() != index()) {
@@ -172,6 +175,9 @@ class Variant {
 
     template <class Callable>
     auto visit(Callable callable) {
+        static_assert(sizeof...(Ts) > 0,
+                      "`visit` cannot be called if Variant is not defined with any alternatives.");
+
         if (holds<empty>()) {
             throw bad_variant_access{};
         }
@@ -199,10 +205,11 @@ class Variant {
     template <class Entry>
     struct on_alternate<bijection<Entry>> {
         static constexpr auto type_destructor(index_type index) noexcept {
+            if (index != Entry::second_type::value) {
+                std::terminate();
+            }
             using T = typename Entry::first_type;
-            return (index == Entry::second_type::value) ?
-                   +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
-                   nullptr;
+            return +[](void* storage) -> void { static_cast<T*>(storage)->~T(); };
         }
 
         template <class Callable>
@@ -216,14 +223,14 @@ class Variant {
         }
     };
 
-    template <class Entry, class... Entries>
-    struct on_alternate<bijection<Entry, Entries...>>
-        : private on_alternate<bijection<Entries...>> {
+    template <class Entry, class NextEntry, class... Entries>
+    struct on_alternate<bijection<Entry, NextEntry, Entries...>>
+        : private on_alternate<bijection<NextEntry, Entries...>> {
         static constexpr auto type_destructor(index_type index) noexcept {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                    +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
-                   on_alternate<bijection<Entries...>>::type_destructor(index);
+                   on_alternate<bijection<NextEntry, Entries...>>::type_destructor(index);
         }
 
         template <class Callable>
@@ -232,7 +239,8 @@ class Variant {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                        callable(reinterpret_cast<T&>(storage)) :
-                       on_alternate<bijection<Entries...>>::invoke(index, storage, callable);
+                       on_alternate<bijection<NextEntry, Entries...>>::invoke(
+                           index, storage, callable);
         }
     };
 
@@ -245,7 +253,7 @@ class Variant {
     }
 
     storage_type storage_;
-    index_type index_;
+    index_type index_ = alternative_index_map::template at_key<empty>::value;
 };
 
 } // namespace variant
