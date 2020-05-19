@@ -5,6 +5,7 @@
 
 namespace state_machine {
 
+using ::state_machine::state_machine::make_state_machine;
 using ::state_machine::state_machine::process_status;
 using ::state_machine::state_machine::StateMachine;
 

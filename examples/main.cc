@@ -109,41 +109,63 @@ auto table() {
 
 int main() {
     // The state machine starts as soon as it is created.
-    sm::StateMachine<decltype(table())> p{table()};
+    auto p = sm::make_state_machine(table());
     assert(p.is_state<Empty>());
+
+    std::cout << '\n';
 
     p.process_event(open_close());
     assert(p.is_state<Open>());
 
+    std::cout << '\n';
+
     p.process_event(open_close());
     assert(p.is_state<Empty>());
+
+    std::cout << '\n';
 
     // will be rejected, wrong disk type
     p.process_event(cd_detected(DiskType::DVD));
     assert(p.is_state<Empty>());
 
+    std::cout << '\n';
+
     p.process_event(cd_detected(DiskType::CD));
     assert(p.is_state<Stopped>());
+
+    std::cout << '\n';
 
     p.process_event(play());
     assert(p.is_state<Playing>());
 
+    std::cout << '\n';
+
     p.process_event(pause());
     assert(p.is_state<Paused>());
+
+    std::cout << '\n';
 
     p.process_event(end_pause());
     assert(p.is_state<Playing>());
 
+    std::cout << '\n';
+
     p.process_event(pause());
     assert(p.is_state<Paused>());
 
+    std::cout << '\n';
+
     p.process_event(stop());
     assert(p.is_state<Stopped>());
+
+    std::cout << '\n';
 
     // event leading to the same state
     // no action method called as it is not present in the transition table
     p.process_event(stop());
     assert(p.is_state<Stopped>());
+
+    std::cout << '\n';
 
     return 0;
 }

@@ -20,11 +20,11 @@ template <class R, class... Rs>
 class Table;
 
 template <class R, class... Rs>
-constexpr auto make_table(R&& first, Rs&&... others) noexcept {
+constexpr auto make_table(R&& first, Rs&&... others) noexcept -> Table<R, Rs...> {
     static_assert(is_row<R>::value, "A `Table` must be composed of `Row`s.");
     static_assert(stdx::conjunction<is_row<Rs>...>::value, "A `Table` must be composed of `Row`s.");
 
-    return Table<R, Rs...>(std::forward<R>(first), std::forward<Rs>(others)...);
+    return {std::forward<R>(first), std::forward<Rs>(others)...};
 }
 
 namespace detail {

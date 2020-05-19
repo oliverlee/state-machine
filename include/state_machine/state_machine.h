@@ -17,6 +17,9 @@ namespace state_machine {
 using ::state_machine::variant::Variant;
 namespace op = ::state_machine::containers::op;
 
+template <class Table>
+class StateMachine;
+
 namespace detail {
 
 template <class, class = void>
@@ -49,6 +52,11 @@ static auto on_exit(T& t) noexcept(noexcept(std::declval<T>().on_exit())) -> voi
 }
 
 } // namespace detail
+
+template <class Table, class... Args>
+constexpr auto make_state_machine(Table&& table, Args&&... args) -> StateMachine<Table> {
+    return {std::forward<Table>(table), std::forward<Args>(args)...};
+}
 
 // The type of exception thrown if `StateMachine::process_event` is called with an invalid internal
 // state.
