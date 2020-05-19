@@ -223,3 +223,129 @@ TEST(variant, visit_type_index) {
     v.emplace<D>();
     EXPECT_EQ(v.visit([](auto a) { return a.value; }), D::value);
 }
+
+class VariantMoveTest : public ::testing::Test {
+  protected:
+    static int ctor_count;
+    static int move_ctor_count;
+    static int dtor_count;
+
+    struct C {
+        C() { ctor_count++; }
+        C(C&&) { move_ctor_count++; }
+        ~C() { dtor_count++; }
+    };
+
+    void SetUp() override {
+        ctor_count = 0;
+        move_ctor_count = 0;
+        dtor_count = 0;
+    }
+};
+
+int VariantMoveTest::ctor_count;
+int VariantMoveTest::move_ctor_count;
+int VariantMoveTest::dtor_count;
+
+TEST_F(VariantMoveTest, move_ctor_C_not_created) {
+    Variant<A, B, C> v1{};
+
+    EXPECT_EQ(ctor_count, 0);
+    EXPECT_EQ(move_ctor_count, 0);
+    EXPECT_EQ(dtor_count, 0);
+
+    auto v2 = std::move(v1);
+
+    EXPECT_EQ(ctor_count, 0);
+    EXPECT_EQ(move_ctor_count, 0);
+    EXPECT_EQ(dtor_count, 0);
+}
+
+TEST_F(VariantMoveTest, move_ctor_emplace_C) {
+    {
+        Variant<A, B, C> v1{};
+        v1.emplace<C>();
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 0);
+        EXPECT_EQ(dtor_count, 0);
+
+        auto v2 = std::move(v1);
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 1);
+        EXPECT_EQ(dtor_count, 0);
+    }
+    EXPECT_EQ(ctor_count, 1);
+    EXPECT_EQ(move_ctor_count, 1);
+    EXPECT_EQ(dtor_count, 2);
+}
+
+TEST_F(VariantMoveTest, move_ctor_set_C) {
+    {
+        Variant<A, B, C> v1{};
+        v1.set(C());
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 1);
+        EXPECT_EQ(dtor_count, 1);
+
+        auto v2 = std::move(v1);
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 2);
+        EXPECT_EQ(dtor_count, 1);
+    }
+    EXPECT_EQ(ctor_count, 1);
+    EXPECT_EQ(move_ctor_count, 2);
+    EXPECT_EQ(dtor_count, 3);
+}
+
+TEST_F(VariantMoveTest, move_assign_emplace_C) {
+    {
+        Variant<A, B, C> v1{};
+        Variant<A, B, C> v2{};
+        v1.emplace<C>();
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 0);
+        EXPECT_EQ(dtor_count, 0);
+
+        v2 = std::move(v1);
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 2);
+        EXPECT_EQ(dtor_count, 1);
+    }
+    EXPECT_EQ(ctor_count, 1);
+    EXPECT_EQ(move_ctor_count, 2);
+    EXPECT_EQ(dtor_count, 3);
+}
+
+TEST_F(VariantMoveTest, move_assign_set_C) {
+    {
+        Variant<A, B, C> v1{};
+        Variant<A, B, C> v2{};
+        v1.set(C());
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 1);
+        EXPECT_EQ(dtor_count, 1);
+
+        v2.emplace<C>();
+
+        EXPECT_EQ(ctor_count, 2);
+        EXPECT_EQ(move_ctor_count, 1);
+        EXPECT_EQ(dtor_count, 1);
+
+        v2 = std::move(v1);
+
+        // There's an extra temporary `C` when performing a move assignment
+        EXPECT_EQ(ctor_count, 2);
+        EXPECT_EQ(move_ctor_count, 3);
+        EXPECT_EQ(dtor_count, 3);
+    }
+    EXPECT_EQ(ctor_count, 2);
+    EXPECT_EQ(move_ctor_count, 3);
+    EXPECT_EQ(dtor_count, 5);
+}

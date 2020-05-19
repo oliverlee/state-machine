@@ -5,6 +5,10 @@
 
 namespace state_machine {
 
+using ::state_machine::state_machine::make_state_machine;
+using ::state_machine::state_machine::process_status;
+using ::state_machine::state_machine::StateMachine;
+
 namespace placeholder {
 constexpr auto _ = transition::empty_placeholder;
 } // namespace placeholder
@@ -14,5 +18,10 @@ constexpr auto state = transition::State<T>{};
 
 template <class E>
 constexpr auto event = transition::Event<E>{};
+
+template <class... Ts>
+constexpr auto make_transition_table(Ts&&... args) noexcept {
+    return transition::make_table_from_transition_args<Ts...>(std::forward<Ts>(args)...);
+}
 
 } // namespace state_machine

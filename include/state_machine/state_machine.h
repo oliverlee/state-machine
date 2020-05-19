@@ -17,6 +17,9 @@ namespace state_machine {
 using ::state_machine::variant::Variant;
 namespace op = ::state_machine::containers::op;
 
+template <class Table>
+class StateMachine;
+
 namespace detail {
 
 template <class, class = void>
@@ -50,6 +53,11 @@ static auto on_exit(T& t) noexcept(noexcept(std::declval<T>().on_exit())) -> voi
 
 } // namespace detail
 
+template <class Table, class... Args>
+constexpr auto make_state_machine(Table&& table, Args&&... args) -> StateMachine<Table> {
+    return {std::forward<Table>(table), std::forward<Args>(args)...};
+}
+
 // The type of exception thrown if `StateMachine::process_event` is called with an invalid internal
 // state.
 class bad_state_access : public std::exception {};
@@ -59,21 +67,29 @@ enum process_status : uint8_t { Completed, EventIgnored, GuardFailure, Undefined
 
 template <class Table>
 class StateMachine {
-    static_assert(transition::is_table<Table>::value,
+    static_assert(transition::is_table<std::decay_t<Table>>::value,
                   "A `StateMachine` must be created from a `Table`");
+
+    static_assert(std::conditional_t<std::is_lvalue_reference<Table>::value,
+                                     std::is_const<std::remove_reference_t<Table>>,
+                                     std::true_type>::value,
+                  "When using a Table reference, that Table must be const.");
 
   public:
     using type = StateMachine<Table>;
-    using state_types = typename Table::state_types;
-    using event_types = typename Table::event_types;
+    using state_types = typename std::decay_t<Table>::state_types;
+    using event_types = typename std::decay_t<Table>::event_types;
     using initial_state_type =
-        typename std::tuple_element_t<0, typename Table::data_type>::source_type;
+        typename std::tuple_element_t<0, typename std::decay_t<Table>::data_type>::source_type;
 
     template <class... Args>
     StateMachine(Table&& table, Args&&... args) : table_{std::forward<Table>(table)} {
         state_.template emplace<initial_state_type>(std::forward<Args>(args)...);
         state_.visit([](auto&& s) { detail::on_entry(std::forward<decltype(s)>(s)); });
     }
+
+    StateMachine(StateMachine&&) = default;
+    auto operator=(StateMachine &&) -> StateMachine& = default;
 
     ~StateMachine() {
         state_.visit([](auto&& s) { detail::on_exit(std::forward<decltype(s)>(s)); });
@@ -116,10 +132,9 @@ class StateMachine {
         using key_type = transition::Key<transition::State<state_type>, transition::Event<Event>>;
 
         return (state_.index() == I) ?
-                   get_row_transitions(
-                       std::forward<Event>(event),
-                       typename Table::row_index_map::template at_key<key_type,
-                                                                      transition_not_found>{}) :
+                   get_row_transitions(std::forward<Event>(event),
+                                       typename std::decay_t<Table>::row_index_map::
+                                           template at_key<key_type, transition_not_found>{}) :
                    find_row(std::forward<Event>(event), std::index_sequence<Is...>{});
     }
 

@@ -181,3 +181,41 @@ TEST(state_machine, process_event) {
         EXPECT_TRUE(sm.is_state<s3>());
     }
 }
+
+TEST(state_machine, process_event_table_reference) {
+    const auto table = generate_table();
+    {
+        StateMachine<decltype(table)&> sm{table};
+        ASSERT_TRUE(sm.is_state<s1>());
+
+        // see order of transitions in `generate_table`
+        EXPECT_EQ(process_status::Completed, sm.process_event(e2{}));
+        EXPECT_TRUE(sm.is_state<s2>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s2>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e3{0}));
+        EXPECT_TRUE(sm.is_state<s2>());
+    }
+
+    {
+        StateMachine<decltype(table)&> sm{table};
+        ASSERT_TRUE(sm.is_state<s1>());
+
+        EXPECT_EQ(process_status::EventIgnored, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s1>());
+    }
+
+    {
+        StateMachine<decltype(table)&> sm{table};
+        ASSERT_TRUE(sm.is_state<s1>());
+        ASSERT_EQ(process_status::Completed, sm.process_event(e3{0}));
+        ASSERT_TRUE(sm.is_state<s3>());
+
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e1{}));
+        EXPECT_TRUE(sm.is_state<s3>());
+        EXPECT_EQ(process_status::UndefinedTransition, sm.process_event(e2{}));
+        EXPECT_TRUE(sm.is_state<s3>());
+        EXPECT_EQ(process_status::Completed, sm.process_event(e3{0}));
+        EXPECT_TRUE(sm.is_state<s3>());
+    }
+}

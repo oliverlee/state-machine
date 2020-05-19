@@ -204,22 +204,22 @@ struct is_empty_placeholder
     : std::is_same<std::decay_t<decltype(empty_placeholder)>, std::decay_t<T>> {};
 
 template <class Guard, std::enable_if_t<!is_empty_placeholder<Guard>::value, int> = 0>
-auto create_guard_if_empty(Guard&& guard) {
+constexpr auto create_guard_if_empty(Guard&& guard) {
     return std::forward<Guard>(guard);
 }
 
 template <class Guard, std::enable_if_t<is_empty_placeholder<Guard>::value, int> = 0>
-auto create_guard_if_empty(Guard&&) {
+constexpr auto create_guard_if_empty(Guard&&) {
     return guard_always{};
 }
 
 template <class Action, std::enable_if_t<!is_empty_placeholder<Action>::value, int> = 0>
-auto create_action_if_empty(Action&& action) {
+constexpr auto create_action_if_empty(Action&& action) {
     return std::forward<Action>(action);
 }
 
 template <class Action, std::enable_if_t<is_empty_placeholder<Action>::value, int> = 0>
-auto create_action_if_empty(Action&&) {
+constexpr auto create_action_if_empty(Action&&) {
     return action_pass{};
 }
 
