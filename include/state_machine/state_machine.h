@@ -80,6 +80,9 @@ class StateMachine {
         state_.visit([](auto&& s) { detail::on_entry(std::forward<decltype(s)>(s)); });
     }
 
+    StateMachine(StateMachine&&) = default;
+    auto operator=(StateMachine &&) -> StateMachine& = default;
+
     ~StateMachine() {
         state_.visit([](auto&& s) { detail::on_exit(std::forward<decltype(s)>(s)); });
     }
