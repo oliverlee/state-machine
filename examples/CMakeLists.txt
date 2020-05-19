@@ -7,3 +7,7 @@ endmacro()
 add_example_executable(simple1
     simple1/main.cc
 )
+
+add_example_executable(simple2
+    simple2/main.cc
+)
