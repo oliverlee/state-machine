@@ -51,7 +51,7 @@ class Variant {
         std::enable_if_t<alternative_index_map::template contains_key<T>::value, int>;
 
   public:
-    constexpr Variant() noexcept : index_{alternative_index_map::template at_key<empty>::value} {}
+    constexpr Variant() noexcept = default;
 
     Variant(const Variant&) = delete;
     Variant& operator=(const Variant&) = delete;
