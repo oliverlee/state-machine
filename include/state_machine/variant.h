@@ -190,14 +190,6 @@ class Variant {
     template <class Entry>
     struct on_alternate<bijection<Entry>> {
 
-        static constexpr auto type_destructor(index_type index) noexcept {
-            if (index != Entry::second_type::value) {
-                std::terminate();
-            }
-            using T = typename Entry::first_type;
-            return +[](void* storage) -> void { static_cast<T*>(storage)->~T(); };
-        }
-
         template <class Callable>
         static constexpr auto invoke(type& self, const Callable& callable) {
             if (self.index() != Entry::second_type::value) {
@@ -212,13 +204,6 @@ class Variant {
     struct on_alternate<bijection<Entry, Next, Rest...>>
         : private on_alternate<bijection<Next, Rest...>> {
 
-        static constexpr auto type_destructor(index_type index) noexcept {
-            using T = typename Entry::first_type;
-            return (index == Entry::second_type::value) ?
-                   +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
-                   on_alternate<bijection<Next, Rest...>>::type_destructor(index);
-        }
-
         template <class Callable>
         static constexpr auto invoke(type& self, const Callable& callable) {
             using T = typename Entry::first_type;
@@ -228,12 +213,13 @@ class Variant {
         }
     };
 
-    auto destroy_internal() noexcept(stdx::disjunction<std::is_nothrow_destructible<Ts>...>::value)
+    inline auto
+    destroy_internal() noexcept(stdx::disjunction<std::is_nothrow_destructible<Ts>...>::value)
         -> void {
-        // Given `index_` corresponds to a value in `alternative_index_map`,
-        // this lookup should always succeed.
-        auto destroy = on_alternate<alternative_index_map>::type_destructor(index_);
-        (*destroy)(static_cast<void*>(std::addressof(storage_)));
+        return on_alternate<alternative_index_map>::invoke(*this, [](auto&& s) {
+            using T = std::decay_t<decltype(s)>;
+            s.T::~T();
+        });
     }
 
     template <class T, enable_if_key_t<T> = 0>
