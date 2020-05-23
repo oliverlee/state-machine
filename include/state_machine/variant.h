@@ -67,9 +67,11 @@ class Variant {
 
     auto operator=(Variant&& rhs) noexcept(
         stdx::conjunction<std::is_nothrow_move_assignable<Ts>...>::value) -> Variant& {
-        // The double move is used to handle self-assignment.
-        auto temp = Variant{std::move(rhs)};
-        if (!temp.template holds<empty>()) {
+        if (rhs.holds<empty>()) {
+            this->emplace<empty>();
+        } else {
+            // A double move is used to handle self-assignment.
+            auto temp = Variant{std::move(rhs)};
             temp.visit([this](auto&& s) { this->set(std::move(s)); });
         }
         return *this;

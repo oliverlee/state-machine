@@ -349,3 +349,25 @@ TEST_F(VariantMoveTest, move_assign_set_C) {
     EXPECT_EQ(move_ctor_count, 3);
     EXPECT_EQ(dtor_count, 5);
 }
+
+TEST_F(VariantMoveTest, move_assign_to_empty) {
+    {
+        Variant<A, B, C> v1{};
+        Variant<A, B, C> v2{};
+        v2.set(C());
+
+        EXPECT_EQ(ctor_count, 1);
+        EXPECT_EQ(move_ctor_count, 1);
+        EXPECT_EQ(dtor_count, 1);
+
+        EXPECT_TRUE(v1.holds<empty>());
+        EXPECT_FALSE(v2.holds<empty>());
+
+        v2 = std::move(v1);
+        EXPECT_TRUE(v1.holds<empty>());
+        EXPECT_TRUE(v2.holds<empty>());
+    }
+    EXPECT_EQ(ctor_count, 1);
+    EXPECT_EQ(move_ctor_count, 1);
+    EXPECT_EQ(dtor_count, 2);
+}
