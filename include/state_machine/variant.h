@@ -13,6 +13,7 @@ namespace variant {
 
 using ::state_machine::containers::bijection;
 using ::state_machine::containers::index_map;
+namespace op = ::state_machine::containers::op;
 
 // The type of exception thrown if `Variant::get` is called with the wrong type.
 class bad_variant_access : public std::exception {};
@@ -31,6 +32,7 @@ class Variant {
     static constexpr size_t size = sizeof...(Ts);
 
   private:
+    using type = Variant<Ts...>;
     using storage_type = std::aligned_union_t<0, empty, Ts...>;
 
     static_assert(stdx::conjunction<aux::is_copy_or_move_constructible<Ts>...>::value,
@@ -170,13 +172,8 @@ class Variant {
             throw bad_variant_access{};
         }
 
-        // Reduce index since the first 'empty' type is never visited.
-        const auto without_empty_index = [](index_type index) -> index_type {
-            return static_cast<index_type>(index - 1);
-        };
-
-        return on_alternate<index_map<Ts...>>::invoke(
-            without_empty_index(index()), storage_, callable);
+        return on_alternate<op::pop_front<op::repack<alternative_index_map, bijection>>>::invoke(
+            *this, callable);
     }
 
     constexpr auto index() const noexcept -> index_type { return index_; }
@@ -187,11 +184,12 @@ class Variant {
     }
 
   private:
-    template <class M>
+    template <class Mapping>
     struct on_alternate;
 
     template <class Entry>
     struct on_alternate<bijection<Entry>> {
+
         static constexpr auto type_destructor(index_type index) noexcept {
             if (index != Entry::second_type::value) {
                 std::terminate();
@@ -201,34 +199,32 @@ class Variant {
         }
 
         template <class Callable>
-        static constexpr auto
-        invoke(index_type index, storage_type& storage, const Callable& callable) {
-            if (index != Entry::second_type::value) {
+        static constexpr auto invoke(type& self, const Callable& callable) {
+            if (self.index() != Entry::second_type::value) {
                 throw bad_variant_access{};
             }
             using T = typename Entry::first_type;
-            return callable(reinterpret_cast<T&>(storage));
+            return callable(self.get<T>());
         }
     };
 
-    template <class Entry, class NextEntry, class... Entries>
-    struct on_alternate<bijection<Entry, NextEntry, Entries...>>
-        : private on_alternate<bijection<NextEntry, Entries...>> {
+    template <class Entry, class Next, class... Rest>
+    struct on_alternate<bijection<Entry, Next, Rest...>>
+        : private on_alternate<bijection<Next, Rest...>> {
+
         static constexpr auto type_destructor(index_type index) noexcept {
             using T = typename Entry::first_type;
             return (index == Entry::second_type::value) ?
                    +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
-                   on_alternate<bijection<NextEntry, Entries...>>::type_destructor(index);
+                   on_alternate<bijection<Next, Rest...>>::type_destructor(index);
         }
 
         template <class Callable>
-        static constexpr auto
-        invoke(index_type index, storage_type& storage, const Callable& callable) {
+        static constexpr auto invoke(type& self, const Callable& callable) {
             using T = typename Entry::first_type;
-            return (index == Entry::second_type::value) ?
-                       callable(reinterpret_cast<T&>(storage)) :
-                       on_alternate<bijection<NextEntry, Entries...>>::invoke(
-                           index, storage, callable);
+            return (self.index() == Entry::second_type::value) ?
+                       callable(self.get<T>()) :
+                       on_alternate<bijection<Next, Rest...>>::invoke(self, callable);
         }
     };
 
