@@ -13,6 +13,7 @@ namespace variant {
 
 using ::state_machine::containers::bijection;
 using ::state_machine::containers::index_map;
+namespace op = ::state_machine::containers::op;
 
 // The type of exception thrown if `Variant::get` is called with the wrong type.
 class bad_variant_access : public std::exception {};
@@ -31,6 +32,7 @@ class Variant {
     static constexpr size_t size = sizeof...(Ts);
 
   private:
+    using type = Variant<Ts...>;
     using storage_type = std::aligned_union_t<0, empty, Ts...>;
 
     static_assert(stdx::conjunction<aux::is_copy_or_move_constructible<Ts>...>::value,
@@ -49,7 +51,7 @@ class Variant {
         std::enable_if_t<alternative_index_map::template contains_key<T>::value, int>;
 
   public:
-    constexpr Variant() noexcept : index_{alternative_index_map::template at_key<empty>::value} {}
+    constexpr Variant() noexcept = default;
 
     Variant(const Variant&) = delete;
     Variant& operator=(const Variant&) = delete;
@@ -65,9 +67,11 @@ class Variant {
 
     auto operator=(Variant&& rhs) noexcept(
         stdx::conjunction<std::is_nothrow_move_assignable<Ts>...>::value) -> Variant& {
-        // The double move is used to handle self-assignment.
-        auto temp = Variant{std::move(rhs)};
-        if (!temp.template holds<empty>()) {
+        if (rhs.holds<empty>()) {
+            this->emplace<empty>();
+        } else {
+            // A double move is used to handle self-assignment.
+            auto temp = Variant{std::move(rhs)};
             temp.visit([this](auto&& s) { this->set(std::move(s)); });
         }
         return *this;
@@ -86,7 +90,7 @@ class Variant {
                              std::is_nothrow_move_constructible<D>::value) -> D& {
         destroy_internal();
         index_ = alternative_index<D>();
-        return *(new (static_cast<void*>(std::addressof(storage_))) D{std::forward<T>(t)});
+        return *(new (std::addressof(storage_)) D{std::forward<T>(t)});
     }
 
     template <class T,
@@ -98,7 +102,7 @@ class Variant {
                                   std::is_nothrow_copy_constructible<D>::value) -> D& {
         destroy_internal();
         index_ = alternative_index<D>();
-        return *(new (static_cast<void*>(std::addressof(storage_))) D{t});
+        return *(new (std::addressof(storage_)) D{t});
     }
 
     template <class T, class... Args, enable_if_key_t<T> = 0>
@@ -106,7 +110,7 @@ class Variant {
                                           noexcept(T{std::forward<Args>(args)...})) -> T& {
         destroy_internal();
         index_ = alternative_index<T>();
-        return *(new (static_cast<void*>(std::addressof(storage_))) T{std::forward<Args>(args)...});
+        return *(new (std::addressof(storage_)) T{std::forward<Args>(args)...});
     }
 
     template <class T, enable_if_key_t<T> = 0>
@@ -116,34 +120,28 @@ class Variant {
 
     template <class T, enable_if_key_t<T> = 0>
     auto get() -> T& {
-        if (alternative_index<T>() != index()) {
+        auto* state = get_impl<T>();
+
+        if (state == nullptr) {
             throw bad_variant_access{};
         }
-        return *reinterpret_cast<T*>(std::addressof(storage_));
+
+        return *state;
     }
 
     template <class T, enable_if_key_t<T> = 0>
     auto get() const -> const T& {
-        if (alternative_index<T>() != index()) {
-            throw bad_variant_access{};
-        }
-        return *reinterpret_cast<T*>(std::addressof(storage_));
+        return get();
     }
 
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() noexcept -> T* {
-        if (alternative_index<T>() != index()) {
-            return nullptr;
-        }
-        return reinterpret_cast<T*>(std::addressof(storage_));
+        return get_impl<T>();
     }
 
     template <class T, enable_if_key_t<T> = 0>
     auto get_if() const noexcept -> const T* {
-        if (alternative_index<T>() != index()) {
-            return nullptr;
-        }
-        return reinterpret_cast<T*>(std::addressof(storage_));
+        return get_impl<T>();
     }
 
     template <class T,
@@ -151,10 +149,7 @@ class Variant {
                                    std::is_move_constructible<T>::value,
                                int> = 0>
     auto take() -> T {
-        if (alternative_index<T>() != index()) {
-            throw bad_variant_access{};
-        }
-        auto retval = std::move(*reinterpret_cast<T*>(std::addressof(storage_)));
+        auto retval = std::move(get<T>());
         emplace<empty>();
         return retval;
     }
@@ -164,10 +159,7 @@ class Variant {
                                    !std::is_move_constructible<T>::value,
                                int> = 0>
     auto take() -> const T {
-        if (alternative_index<T>() != index()) {
-            throw bad_variant_access{};
-        }
-        const auto retval = *reinterpret_cast<T*>(std::addressof(storage_));
+        const auto retval = get<T>();
         emplace<empty>();
         // Return a const value to force binding to the object copy constructor.
         return retval;
@@ -182,13 +174,8 @@ class Variant {
             throw bad_variant_access{};
         }
 
-        // Reduce index since the first 'empty' type is never visited.
-        const auto without_empty_index = [](index_type index) -> index_type {
-            return static_cast<index_type>(index - 1);
-        };
-
-        return on_alternate<index_map<Ts...>>::invoke(
-            without_empty_index(index()), storage_, callable);
+        return on_alternate<op::pop_front<op::repack<alternative_index_map, bijection>>>::invoke(
+            *this, callable);
     }
 
     constexpr auto index() const noexcept -> index_type { return index_; }
@@ -199,57 +186,50 @@ class Variant {
     }
 
   private:
-    template <class M>
+    template <class Mapping>
     struct on_alternate;
 
     template <class Entry>
     struct on_alternate<bijection<Entry>> {
-        static constexpr auto type_destructor(index_type index) noexcept {
-            if (index != Entry::second_type::value) {
-                std::terminate();
-            }
-            using T = typename Entry::first_type;
-            return +[](void* storage) -> void { static_cast<T*>(storage)->~T(); };
-        }
 
         template <class Callable>
-        static constexpr auto
-        invoke(index_type index, storage_type& storage, const Callable& callable) {
-            if (index != Entry::second_type::value) {
+        static constexpr auto invoke(type& self, const Callable& callable) {
+            if (self.index() != Entry::second_type::value) {
                 throw bad_variant_access{};
             }
             using T = typename Entry::first_type;
-            return callable(reinterpret_cast<T&>(storage));
+            return callable(self.get<T>());
         }
     };
 
-    template <class Entry, class NextEntry, class... Entries>
-    struct on_alternate<bijection<Entry, NextEntry, Entries...>>
-        : private on_alternate<bijection<NextEntry, Entries...>> {
-        static constexpr auto type_destructor(index_type index) noexcept {
-            using T = typename Entry::first_type;
-            return (index == Entry::second_type::value) ?
-                   +[](void* storage) -> void { static_cast<T*>(storage)->~T(); } :
-                   on_alternate<bijection<NextEntry, Entries...>>::type_destructor(index);
-        }
+    template <class Entry, class Next, class... Rest>
+    struct on_alternate<bijection<Entry, Next, Rest...>>
+        : private on_alternate<bijection<Next, Rest...>> {
 
         template <class Callable>
-        static constexpr auto
-        invoke(index_type index, storage_type& storage, const Callable& callable) {
+        static constexpr auto invoke(type& self, const Callable& callable) {
             using T = typename Entry::first_type;
-            return (index == Entry::second_type::value) ?
-                       callable(reinterpret_cast<T&>(storage)) :
-                       on_alternate<bijection<NextEntry, Entries...>>::invoke(
-                           index, storage, callable);
+            return (self.index() == Entry::second_type::value) ?
+                       callable(self.get<T>()) :
+                       on_alternate<bijection<Next, Rest...>>::invoke(self, callable);
         }
     };
 
-    auto destroy_internal() noexcept(stdx::disjunction<std::is_nothrow_destructible<Ts>...>::value)
+    inline auto
+    destroy_internal() noexcept(stdx::disjunction<std::is_nothrow_destructible<Ts>...>::value)
         -> void {
-        // Given `index_` corresponds to a value in `alternative_index_map`,
-        // this lookup should always succeed.
-        auto destroy = on_alternate<alternative_index_map>::type_destructor(index_);
-        (*destroy)(static_cast<void*>(std::addressof(storage_)));
+        return on_alternate<alternative_index_map>::invoke(*this, [](auto&& s) {
+            using T = std::decay_t<decltype(s)>;
+            s.T::~T();
+        });
+    }
+
+    template <class T, enable_if_key_t<T> = 0>
+    inline auto get_impl() noexcept -> T* {
+        if (holds<T>()) {
+            return reinterpret_cast<T*>(std::addressof(storage_));
+        }
+        return nullptr;
     }
 
     storage_type storage_;
