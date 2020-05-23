@@ -157,6 +157,21 @@ struct flatten_impl<L<Rs...>, L<>> : L<Rs...> {};
 template <class L>
 using flatten = typename detail::flatten_impl_input<L>::type;
 
+
+namespace detail {
+
+template <class L>
+struct pop_front_impl;
+
+template <template <class...> class L, class T, class... Ts>
+struct pop_front_impl<L<T, Ts...>> : L<Ts...> {};
+
+} // namespace detail
+
+// Given L<T, Ts...> return L<Ts...>.
+template <class L>
+using pop_front = typename detail::pop_front_impl<L>::type;
+
 } // namespace operations
 } // namespace containers
 } // namespace state_machine

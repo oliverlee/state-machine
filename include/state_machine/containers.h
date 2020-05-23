@@ -23,6 +23,7 @@ using ::state_machine::containers::operations::filter;
 using ::state_machine::containers::operations::flatten;
 using ::state_machine::containers::operations::make_unique;
 using ::state_machine::containers::operations::map;
+using ::state_machine::containers::operations::pop_front;
 using ::state_machine::containers::operations::repack;
 
 } // namespace op
