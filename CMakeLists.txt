@@ -50,6 +50,7 @@ endif()
 
 
 option(BUILD_TESTS "Build tests" ON)
+option(BUILD_COMPILE_TESTS "Build compile tests" ON)
 if(BUILD_TESTS)
     enable_testing()
 endif()
