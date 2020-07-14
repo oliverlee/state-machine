@@ -42,13 +42,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install clang-format-8
+    - name: Install clang-format
       run: |
-        sudo apt-get install -y clang-format-8
+        sudo apt-get install -y clang-format
 
     - name: Run clang-format
       run: |
-        clang-format-8 --version
-        find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format-8 -i {} \;
+        clang-format --version
+        find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format -i {} \;
         git update-index --really-refresh
         git --no-pager diff
