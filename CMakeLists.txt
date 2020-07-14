@@ -68,6 +68,7 @@ if (BUILD_COVERAGE)
         "${PROJECT_SOURCE_DIR}/tests/*"
         "/Applications/*"
         "/usr/local/Cellar/*"
+        "/usr/include/*"
     DEPENDENCIES
         build-unit-tests
   )
