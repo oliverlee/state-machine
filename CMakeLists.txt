@@ -62,7 +62,7 @@ if (BUILD_COVERAGE)
 
   setup_target_for_coverage_lcov(
     NAME coverage
-    EXECUTABLE ctest -j ${n_cores}
+    EXECUTABLE ctest --output-on-failure -j ${n_cores} || true
     EXCLUDE
         "${PROJECT_SOURCE_DIR}/extern/*"
         "${PROJECT_SOURCE_DIR}/tests/*"
@@ -73,10 +73,14 @@ if (BUILD_COVERAGE)
         build-unit-tests
   )
 
+  # Note: Preventing constructor elision results in some tests failing due to
+  # counting the number of constructor/destructor calls.
   set(DEFAULT_CXX_OPTIONS ${DEFAULT_CXX_OPTIONS}
         -fno-inline
         -fno-inline-small-functions
         -fno-default-inline
+        -fno-elide-constructors
+        -fkeep-inline-functions
   )
 endif()
 
