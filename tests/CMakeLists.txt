@@ -1,5 +1,7 @@
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
 
+add_custom_target(build-unit-tests ALL)
+
 macro(package_add_test testname)
     add_executable(${testname} ${ARGN})
     target_link_libraries(${testname}
@@ -13,6 +15,8 @@ macro(package_add_test testname)
         PUBLIC ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(${testname}
         PRIVATE ${DEFAULT_CXX_OPTIONS})
+
+    add_dependencies(build-unit-tests ${testname})
 endmacro()
 
 function(expect_compile_failure file)
