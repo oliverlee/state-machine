@@ -52,9 +52,35 @@ endif()
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests)
 endif()
 
+option(BUILD_COVERAGE "Build coverage" OFF)
+if (BUILD_COVERAGE)
+  include(cmake/CodeCoverage.cmake)
+
+  append_coverage_compiler_flags()
+
+  setup_target_for_coverage_lcov(
+    NAME coverage
+    EXECUTABLE ctest -j ${n_cores}
+    EXCLUDE
+        "${PROJECT_SOURCE_DIR}/extern/*"
+        "${PROJECT_SOURCE_DIR}/tests/*"
+        "/Applications/*"
+        "/usr/local/Cellar/*"
+        "/usr/include/*"
+    DEPENDENCIES
+        build-unit-tests
+  )
+
+  set(DEFAULT_CXX_OPTIONS ${DEFAULT_CXX_OPTIONS}
+        -fno-inline
+        -fno-inline-small-functions
+        -fno-default-inline
+  )
+endif()
+
+add_subdirectory(tests)
 
 option(BUILD_EXAMPLES "Build examples" ON)
 if(BUILD_EXAMPLES)

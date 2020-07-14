@@ -52,3 +52,33 @@ jobs:
         find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format -i {} \;
         git update-index --really-refresh
         git --no-pager diff
+
+  coverage:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install lcov
+      run: |
+        sudo apt-get install -y lcov
+
+    - name: Checkout Submodules
+      run: |
+        git submodule update --init --recursive --recommend-shallow
+
+    - name: Configure CMake build
+      run: |
+        cmake -S . -B build -DBUILD_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug
+
+    - name: Cleanup CMake compiler check
+      run: |
+        find . -name 'CMakeCCompilerId.gcno' -exec rm {} \;
+
+    - name: Build coverage report
+      run: |
+        cd build && make coverage && lcov --list coverage.info
+
+    - uses: codecov/codecov-action@v1
+      with:
+        file: ./build/coverage.info
+        fail_ci_if_error: true
