@@ -68,7 +68,7 @@ jobs:
 
     - name: Configure CMake build
       run: |
-        cmake -S . -B build -DBUILD_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug
+        cmake -S . -B build -DBUILD_COVERAGE=1 -DCMAKE_BUILD_TYPE=Debug -DBUILD_COMPILE_TESTS=0
 
     - name: Cleanup CMake compiler check
       run: |

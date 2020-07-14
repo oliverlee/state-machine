@@ -62,7 +62,9 @@ package_add_test(test_state_machine
 package_add_test(test_variant
     test_variant.cc)
 
-# compilation tests
-expect_compile_failure(failure_surjection_duplicate_keys.cc)
-expect_compile_failure(failure_surjection_entries_not_pairs.cc)
-expect_compile_failure(failure_bijection_duplicate_values.cc)
+if(BUILD_COMPILE_TESTS)
+    # compilation tests
+    expect_compile_failure(failure_surjection_duplicate_keys.cc)
+    expect_compile_failure(failure_surjection_entries_not_pairs.cc)
+    expect_compile_failure(failure_bijection_duplicate_values.cc)
+endif()
