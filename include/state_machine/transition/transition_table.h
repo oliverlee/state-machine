@@ -106,7 +106,7 @@ class Table {
     constexpr auto into_data() && noexcept -> data_type&& { return std::move(data_); }
 
     template <class T>
-        constexpr auto update(T&& transition) && noexcept {
+    constexpr auto update(T&& transition) && noexcept {
         static_assert(is_transition<T>::value, "Argument to `update` must be a `Transition`.");
 
         return std::move(*this).update_impl(std::move(transition),
@@ -118,7 +118,7 @@ class Table {
               size_t... Is,
               std::enable_if_t<!row_index_map::template contains_key<typename T::key_type>::value,
                                int> = 0>
-        constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
+    constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
         return make_table(std::get<Is>(std::move(*this).into_data())...,
                           make_row(std::forward<T>(transition)));
     }
@@ -127,7 +127,7 @@ class Table {
               size_t... Is,
               std::enable_if_t<row_index_map::template contains_key<typename T::key_type>::value,
                                int> = 0>
-        constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
+    constexpr auto update_impl(T&& transition, std::index_sequence<Is...>) && noexcept {
         constexpr size_t Index = row_index_map::template at_key<typename T::key_type>::value;
 
         return std::move(*this).template update_table_row<T, Index>(
@@ -137,10 +137,9 @@ class Table {
     }
 
     template <class T, size_t Index, size_t... Left, size_t... Right>
-        constexpr auto update_table_row(T&& transition,
-                                        std::index_sequence<Left...>,
-                                        std::index_sequence<Right...>) &&
-        noexcept {
+    constexpr auto update_table_row(T&& transition,
+                                    std::index_sequence<Left...>,
+                                    std::index_sequence<Right...>) && noexcept {
         auto data = std::move(*this).into_data();
         return make_table(std::get<Left>(std::move(data))...,
                           std::get<Index>(std::move(data)).append(std::forward<T>(transition)),

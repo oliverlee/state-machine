@@ -106,8 +106,9 @@ class Variant {
     }
 
     template <class T, class... Args, enable_if_key_t<T> = 0>
-    auto emplace(Args&&... args) noexcept(noexcept(std::declval<Variant>().destroy_internal()) &&
-                                          noexcept(T{std::forward<Args>(args)...})) -> T& {
+    auto emplace(Args&&... args) noexcept(noexcept(
+        std::declval<Variant>().destroy_internal()) && noexcept(T{std::forward<Args>(args)...}))
+        -> T& {
         destroy_internal();
         index_ = alternative_index<T>();
         return *(new (std::addressof(storage_)) T{std::forward<Args>(args)...});

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set Environment
+      run: |
+        if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          echo "::set-env name=CC::gcc"
+          echo "::set-env name=CXX::g++"
+        else
+          echo "::set-env name=CC::clang"
+          echo "::set-env name=CXX::clang++"
+        fi
+
+    - name: Checkout Submodules
+      run: |
+        git submodule update --init --recursive --recommend-shallow
+
+    - name: Build and Test
+      run: |
+        cmake -S . -B build
+        cmake --build build
+        cd build && GTEST_COLOR=1 ctest --verbose
+
+  format:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install clang-format
+      run: |
+        sudo apt-get install -y clang-format
+
+    - name: Run clang-format
+      run: |
+        clang-format --version
+        find examples include tests \(  -name "*.cc" -o -name "*.h" \) -exec clang-format -i {} \;
+        git update-index --really-refresh
+        git --no-pager diff
