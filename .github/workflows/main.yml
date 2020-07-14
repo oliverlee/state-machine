@@ -77,3 +77,8 @@ jobs:
     - name: Build coverage report
       run: |
         cd build && make coverage && lcov --list coverage.info
+
+    - uses: codecov/codecov-action@v1
+      with:
+        file: ./build/coverage.info
+        fail_ci_if_error: true
