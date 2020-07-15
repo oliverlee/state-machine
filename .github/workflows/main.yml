@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  BAZEL_VERSION: "3.4.1"
+
 jobs:
   test:
     strategy:
@@ -44,23 +47,33 @@ jobs:
           echo "::set-env name=CXX::/usr/local/bin/g++-9"
         fi
 
+    - id: cache-bazel-install
+      if: matrix.build_tool == 'bazel'
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/bin/bazel*
+          ~/.bazel
+        key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}
+
     - name: Setup Bazel
       if: matrix.build_tool == 'bazel'
-      env:
-          BAZEL_VERSION: "3.4.1"
       run: |
-        if [[ "${{ matrix.os }}" == "macos"* ]]; then
-          OS=darwin
-        else
-          OS=linux
+        if [[ "${{ steps.cache-bazel-install.outputs.cache-hit }}" != 'true' ]]; then
+
+          if [[ "${{ matrix.os }}" == "macos"* ]]; then
+            OS=darwin
+          else
+            OS=linux
+          fi
+
+          URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${OS}-x86_64.sh"
+
+          wget -O install.sh "${URL}"
+          chmod +x install.sh
+          ./install.sh --user
+          rm -f install.sh
         fi
-
-        URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${OS}-x86_64.sh"
-
-        wget -O install.sh "${URL}"
-        chmod +x install.sh
-        ./install.sh --user
-        rm -f install.sh
 
         cat .bazelrc.ci >> .bazelrc
 
