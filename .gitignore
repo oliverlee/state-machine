@@ -1,2 +1,8 @@
-# build directories
+# Default CMake build directories
 /build*/
+
+# Bazel directories
+/bazel-*
+
+# User bazelrc file
+/user.bazelrc
