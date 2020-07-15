@@ -27,24 +27,16 @@ jobs:
     - name: Set Environment
       run: |
         if [ "${{ matrix.compiler }}" = "gcc" ]; then
-          echo "::set-env name=CC::gcc"
-          echo "::set-env name=CXX::g++"
+          if [[ "${{ matrix.os }}" == "macos"* ]]; then
+            echo "::set-env name=CC::/usr/local/bin/gcc-9"
+            echo "::set-env name=CXX::/usr/local/bin/g++-9"
+          else
+            echo "::set-env name=CC::gcc"
+            echo "::set-env name=CXX::g++"
+          fi
         else
           echo "::set-env name=CC::clang"
           echo "::set-env name=CXX::clang++"
-        fi
-
-    - name: Install Tools (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        if [ "${{ matrix.build_tool }}" = "cmake" ]; then
-          brew install cmake
-        fi
-
-        if [ "${{ matrix.compiler }}" = "gcc" ]; then
-          brew install gcc@9
-          echo "::set-env name=CC::/usr/local/bin/gcc-9"
-          echo "::set-env name=CXX::/usr/local/bin/g++-9"
         fi
 
     - id: cache-bazel-install
