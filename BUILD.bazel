@@ -1,0 +1,11 @@
+load("@generated_compiler_config//:variables.bzl", "STATE_MACHINE_DEFAULT_COPTS")
+
+cc_library(
+    name = "state_machine",
+    textual_hdrs = glob(["include/**/*.h"]),
+    copts = STATE_MACHINE_DEFAULT_COPTS,
+    visibility = [
+        "//examples:__pkg__",
+        "//tests:__pkg__"
+    ],
+)

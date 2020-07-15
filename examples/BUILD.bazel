@@ -1,0 +1,15 @@
+load("@generated_compiler_config//:variables.bzl", "STATE_MACHINE_DEFAULT_COPTS")
+
+cc_binary(
+    name = "simple1",
+    srcs = ["simple1/main.cc"],
+    copts = STATE_MACHINE_DEFAULT_COPTS,
+    deps = ["//:state_machine"],
+)
+
+cc_binary(
+    name = "simple2",
+    srcs = ["simple2/main.cc"],
+    copts = STATE_MACHINE_DEFAULT_COPTS,
+    deps = ["//:state_machine"],
+)

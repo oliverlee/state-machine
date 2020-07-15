@@ -1,0 +1,25 @@
+build --cxxopt='-std=c++14'
+build --verbose_failures
+build --show_result='10'
+build --action_env=CC
+build --action_env='BAZEL_USE_CPP_ONLY_TOOLCHAIN=1'
+
+test --keep_going
+test --build_tests_only
+test --test_output=errors
+test --test_summary=detailed
+test --action_env='GTEST_COLOR=1'
+
+coverage -c dbg
+coverage --instrumentation_filter=''
+coverage --javabase=@bazel_tools//tools/jdk:remote_jdk11
+coverage --combined_report=lcov
+coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
+
+coverage --cxxopt='-fno-inline'
+coverage --cxxopt='-fno-inline-small-functions'
+coverage --cxxopt='-fno-default-inline'
+coverage --cxxopt='-fno-elide-constructors'
+coverage --cxxopt='-fkeep-inline-functions'
+
+try-import %workspace%/user.bazelrc

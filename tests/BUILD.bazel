@@ -1,0 +1,9 @@
+load("//tests:macros.bzl", "add_unit_test")
+
+add_unit_test("test_backport")
+add_unit_test("test_traits")
+add_unit_test("test_containers")
+add_unit_test("test_transition_row")
+add_unit_test("test_transition_table")
+add_unit_test("test_state_machine")
+add_unit_test("test_variant")

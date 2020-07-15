@@ -12,10 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
+        build_tool: [cmake, bazel]
 
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     - name: Set Environment
       run: |
@@ -27,15 +30,39 @@ jobs:
           echo "::set-env name=CXX::clang++"
         fi
 
-    - name: Checkout Submodules
+    - name: Setup Bazel
+      if: matrix.build_tool == 'bazel'
+      env:
+          BAZEL_VERSION: "3.4.1"
       run: |
-        git submodule update --init --recursive --recommend-shallow
+        sysctl kernel.unprivileged_userns_clone=1
+        sudo apt-get update -q
+        sudo apt-get install libxml2-utils -y
+        OS=linux
 
-    - name: Build and Test
+        URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${OS}-x86_64.sh"
+
+        wget -O install.sh "${URL}"
+        chmod +x install.sh
+        ./install.sh --user
+        rm -f install.sh
+
+        cat .bazelrc.ci >> .bazelrc
+
+        echo "::set-env name=CXX::$CC"
+
+    - name: Build and Test (CMake)
+      if: matrix.build_tool == 'cmake'
       run: |
         cmake -S . -B build
         cmake --build build
         cd build && GTEST_COLOR=1 ctest --verbose
+
+    - name: Build and Test (Bazel)
+      if: matrix.build_tool == 'bazel'
+      run: |
+        bazel build //examples:all
+        bazel test //...
 
   format:
     runs-on: ubuntu-20.04
@@ -57,14 +84,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     - name: Install lcov
       run: |
         sudo apt-get install -y lcov
-
-    - name: Checkout Submodules
-      run: |
-        git submodule update --init --recursive --recommend-shallow
 
     - name: Configure CMake build
       run: |
