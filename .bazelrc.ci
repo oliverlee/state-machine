@@ -1,0 +1,9 @@
+# This is from Bazel's former travis setup, to avoid blowing up the RAM usage.
+startup --host_jvm_args=-Xmx2500m
+
+build --spawn_strategy=sandboxed,local
+build --show_timestamps
+build --announce_rc
+build --color=yes
+
+test --test_output=all

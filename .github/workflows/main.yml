@@ -12,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
+        build_tool: [cmake, bazel]
 
     runs-on: ubuntu-18.04
     steps:
@@ -27,15 +28,43 @@ jobs:
           echo "::set-env name=CXX::clang++"
         fi
 
+    - name: Setup Bazel
+      if: matrix.build_tool == 'bazel'
+      env:
+          BAZEL_VERSION: "3.4.1"
+      run: |
+        sysctl kernel.unprivileged_userns_clone=1
+        sudo apt-get update -q
+        sudo apt-get install libxml2-utils -y
+        OS=linux
+
+        URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${OS}-x86_64.sh"
+
+        wget -O install.sh "${URL}"
+        chmod +x install.sh
+        ./install.sh --user
+        rm -f install.sh
+
+        cat .bazelrc.ci >> .bazelrc
+
+        echo "::set-env name=CXX::$CC"
+
     - name: Checkout Submodules
       run: |
         git submodule update --init --recursive --recommend-shallow
 
-    - name: Build and Test
+    - name: Build and Test (CMake)
+      if: matrix.build_tool == 'cmake'
       run: |
         cmake -S . -B build
         cmake --build build
         cd build && GTEST_COLOR=1 ctest --verbose
+
+    - name: Build and Test (Bazel)
+      if: matrix.build_tool == 'bazel'
+      run: |
+        bazel build //examples:all
+        bazel test //...
 
   format:
     runs-on: ubuntu-20.04
