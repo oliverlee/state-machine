@@ -89,8 +89,8 @@ jobs:
     - name: Build and Test (Bazel)
       if: matrix.build_tool == 'bazel'
       run: |
-        bazel build //examples:all
-        bazel test //...
+        bazel build //examples/...
+        bazel test //tests/...
 
   format:
     runs-on: ubuntu-20.04
