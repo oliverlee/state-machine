@@ -40,6 +40,7 @@ def lint_sources(name, sources, compdb, dependencies, options=None, visibility=N
                 + " $(location %s)" % source
                 + " && md5sum $$(echo $(SRCS) | sort) > $@"
             ),
+            tags = ["lint", "manual"],
             testonly = True,
         )
 
@@ -48,4 +49,6 @@ def lint_sources(name, sources, compdb, dependencies, options=None, visibility=N
         srcs = ["//lint:dummy.sh"],
         data = outputs,
         visibility = visibility,
+        size = "medium",
+        tags = ["lint", "manual"],
     )
