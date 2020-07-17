@@ -54,7 +54,9 @@ jobs:
       with:
         path: |
           ~/.cache/bazel
-        key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}
+        key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}-${{ github.sha }}
+        restore-keys: |
+          ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}-
 
     - name: Setup Bazel
       if: matrix.build_tool == 'bazel'
@@ -168,7 +170,9 @@ jobs:
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}
+          key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}-${{ github.sha }}
+          restore-keys: |
+            ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}-
 
       - name: Setup Bazel
         run: |
