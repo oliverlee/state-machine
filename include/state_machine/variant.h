@@ -54,14 +54,14 @@ class Variant {
     constexpr Variant() noexcept = default;
 
     Variant(const Variant&) = delete;
-    Variant& operator=(const Variant&) = delete;
+    auto operator=(const Variant&) -> Variant& = delete;
 
     Variant(Variant&& rhs) noexcept(
         stdx::conjunction<std::is_nothrow_move_constructible<Ts>...>::value) {
         if (!rhs.holds<empty>()) {
-            rhs.visit([this](auto&& s) {
-                this->set<std::remove_reference_t<decltype(s)>>(std::move(s));
-            });
+            on_alternate<op::pop_front<op::repack<alternative_index_map, bijection>>>::invoke(
+                rhs,
+                [this](auto& s) { this->set<std::remove_reference_t<decltype(s)>>(std::move(s)); });
         }
     }
 
@@ -72,7 +72,7 @@ class Variant {
         } else {
             // A double move is used to handle self-assignment.
             auto temp = Variant{std::move(rhs)};
-            temp.visit([this](auto&& s) { this->set(std::move(s)); });
+            temp.visit([this](auto& s) { this->set(std::move(s)); });
         }
         return *this;
     }
@@ -159,7 +159,7 @@ class Variant {
               std::enable_if_t<alternative_index_map::template contains_key<T>::value &&
                                    !std::is_move_constructible<T>::value,
                                int> = 0>
-    auto take() -> const T {
+    auto take() -> T {
         const auto retval = get<T>();
         emplace<empty>();
         // Return a const value to force binding to the object copy constructor.
@@ -195,11 +195,11 @@ class Variant {
 
         template <class Callable>
         static constexpr auto invoke(type& self, const Callable& callable) {
-            if (self.index() != Entry::second_type::value) {
-                throw bad_variant_access{};
-            }
             using T = typename Entry::first_type;
-            return callable(self.get<T>());
+            if (self.index() == Entry::second_type::value) {
+                return callable(self.get<T>());
+            }
+            __builtin_unreachable();
         }
     };
 
@@ -228,12 +228,13 @@ class Variant {
     template <class T, enable_if_key_t<T> = 0>
     inline auto get_impl() noexcept -> T* {
         if (holds<T>()) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
             return reinterpret_cast<T*>(std::addressof(storage_));
         }
         return nullptr;
     }
 
-    storage_type storage_;
+    storage_type storage_ = {};
     index_type index_ = alternative_index_map::template at_key<empty>::value;
 };
 
