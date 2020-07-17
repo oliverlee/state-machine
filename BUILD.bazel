@@ -9,12 +9,3 @@ cc_library(
         "//tests:__pkg__"
     ],
 )
-
-load("@com_grail_compdb//:aspects.bzl", "compilation_database")
-
-compilation_database(
-    name = "state_machine_compdb",
-    targets = [
-        "//:state_machine",
-    ],
-)

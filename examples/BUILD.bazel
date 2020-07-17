@@ -1,4 +1,6 @@
 load("@local_config//:variables.bzl", "STATE_MACHINE_DEFAULT_COPTS")
+load("@local_config//:bazel_info.bzl", "BAZEL_OUTPUT_BASE")
+load("@com_grail_compdb//:aspects.bzl", "compilation_database")
 
 cc_binary(
     name = "simple1",
@@ -12,4 +14,13 @@ cc_binary(
     srcs = ["simple2/main.cc"],
     copts = STATE_MACHINE_DEFAULT_COPTS,
     deps = ["//:state_machine"],
+)
+
+compilation_database(
+    name = "compdb",
+    targets = [
+        ":simple1",
+        ":simple2",
+    ],
+    exec_root = BAZEL_OUTPUT_BASE + "execroot/__main__",
 )
