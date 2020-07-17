@@ -8,16 +8,16 @@ using ::state_machine::variant::empty;
 using ::state_machine::variant::Variant;
 
 struct A {
-    A(int a) : value{a} {}
-    A(A&&) = default;
+    explicit A(int a) : value{a} {}
+    A(A&&) noexcept = default;
     A(const A&) = delete;
     int value;
 };
 
 struct B {
-    B(int b) : value{b} {}
+    explicit B(int b) : value{b} {}
     B(B&&) = delete;
-    B(const B&) = default;
+    B(const B&) noexcept = default;
     int value;
 };
 
@@ -105,21 +105,21 @@ TEST(variant, get_if) {
 
     ASSERT_TRUE(v.holds<empty>());
     {
-        auto result = v.get_if<A>();
+        auto* result = v.get_if<A>();
         EXPECT_EQ(result, nullptr);
     }
     {
-        auto result = v.get_if<B>();
+        auto* result = v.get_if<B>();
         EXPECT_EQ(result, nullptr);
     }
 
     v.set(B{0});
     {
-        auto result = v.get_if<A>();
+        auto* result = v.get_if<A>();
         EXPECT_EQ(result, nullptr);
     }
     {
-        auto result = v.get_if<B>();
+        auto* result = v.get_if<B>();
         EXPECT_NE(result, nullptr);
     }
 }
@@ -160,7 +160,7 @@ TEST(variant, take_copy) {
 
     struct C {
         C() { ctor_count++; }
-        C(C&&) { ctor_count++; }
+        C(C&&) noexcept { ctor_count++; }
         ~C() { dtor_count++; }
     };
 
@@ -232,7 +232,7 @@ class VariantMoveTest : public ::testing::Test {
 
     struct C {
         C() { ctor_count++; }
-        C(C&&) { move_ctor_count++; }
+        C(C&&) noexcept { move_ctor_count++; }
         ~C() { dtor_count++; }
     };
 
@@ -364,6 +364,7 @@ TEST_F(VariantMoveTest, move_assign_to_empty) {
         EXPECT_FALSE(v2.holds<empty>());
 
         v2 = std::move(v1);
+        // NOLINTNEXTLINE(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
         EXPECT_TRUE(v1.holds<empty>());
         EXPECT_TRUE(v2.holds<empty>());
     }

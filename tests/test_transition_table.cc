@@ -17,14 +17,14 @@ using ::state_machine::transition::make_transition;
 struct s1 {};
 struct s2 {};
 struct s3 {
-    s3(int x) : value{x} {}
+    explicit s3(int x) : value{x} {}
     int value;
 };
 
 struct e1 {};
 struct e2 {};
 struct e3 {
-    e3(int x) : value{x} {}
+    explicit e3(int x) : value{x} {}
     int value;
 };
 

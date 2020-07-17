@@ -3,6 +3,7 @@ Checks: >-
     -android-*,
     -clang-analyzer-osx.*,
     -darwin-*,
+    -fuchsia-default-arguments-calls,
     -fuchsia-multiple-inheritance,
     -fuchsia-overloaded-operator,
     -fuchsia-trailing-return,
@@ -13,13 +14,18 @@ Checks: >-
     -mpi-*,
     -objc-*,
     -openmp-*,
+    -readability-named-parameter,
     -zircon-temporary-objects,
     # aliases,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -hicpp-avoid-goto,
     -hicpp-explicit-conversions,
+    -hicpp-invalid-access-moved,
     -hicpp-member-init,
     -hicpp-noexcept-move,
     -hicpp-special-member-functions,
     -hicpp-use-equals-default,
+    -llvm-qualified-auto,
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '^include'

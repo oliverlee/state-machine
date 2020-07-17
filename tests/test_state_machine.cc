@@ -19,43 +19,43 @@ using ::state_machine::transition::make_table_from_transition_args;
 struct s1 {};
 struct s2 {};
 struct s3 {
-    constexpr s3(int x) : value{x} {}
+    constexpr explicit s3(int x) : value{x} {}
     int value;
 };
 
 struct e1 {};
 struct e2 {};
 struct e3 {
-    constexpr e3(int x) : value{x} {}
+    constexpr explicit e3(int x) : value{x} {}
     int value;
 };
 
 template <int N>
 struct e3_greater_than {
-    constexpr e3_greater_than(){};
+    constexpr e3_greater_than() = default;
     constexpr auto operator()(const e3& e) const noexcept -> bool { return e.value > N; }
 };
 
 template <int N>
 struct e3_less_than {
-    constexpr e3_less_than(){};
+    constexpr e3_less_than() = default;
     constexpr auto operator()(const e3& e) const noexcept -> bool { return e.value < N; }
 };
 
 struct return_s2 {
-    constexpr return_s2(){};
+    constexpr return_s2() = default;
     constexpr auto operator()() const noexcept -> s2 { return {}; }
 };
 
 template <int N>
 struct return_s3 {
-    constexpr return_s3(){};
-    constexpr auto operator()() const noexcept -> s3 { return {N}; }
+    constexpr return_s3() = default;
+    constexpr auto operator()() const noexcept -> s3 { return s3{N}; }
 };
 
 struct return_s3_e3 {
-    constexpr return_s3_e3(){};
-    constexpr auto operator()(const e3& e) const noexcept -> s3 { return {e.value}; }
+    constexpr return_s3_e3() = default;
+    constexpr auto operator()(const e3& e) const noexcept -> s3 { return s3{e.value}; }
 };
 
 constexpr auto generate_table() noexcept {
@@ -92,7 +92,7 @@ TEST(state_machine, state_types) {
 
 TEST(state_machine, emplace_initial_state) {
     struct s4 {
-        constexpr s4(int i) : value{i} {}
+        constexpr explicit s4(int i) : value{i} {}
         int value;
     };
 
@@ -107,7 +107,9 @@ TEST(state_machine, on_entry_initial_state) {
     static int on_entry_count;
 
     struct s4 {
-        constexpr s4() {}
+        constexpr s4() = default;
+
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
         auto on_entry() -> void { on_entry_count++; }
     };
 
@@ -128,7 +130,9 @@ TEST(state_machine, on_exit_state_sm_dtor) {
     static int on_exit_count;
 
     struct s4 {
-        constexpr s4() {}
+        constexpr s4() = default;
+
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
         auto on_exit() -> void { on_exit_count++; }
     };
 

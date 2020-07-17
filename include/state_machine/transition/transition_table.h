@@ -143,8 +143,15 @@ class Table {
                                     std::index_sequence<Left...>,
                                     std::index_sequence<Right...>) && noexcept {
         auto data = std::move(*this).into_data();
+
+        // Each call to `std::get` only removes the "Left", "Index", or "Right" elements from
+        // `data_`, leaving other elements to other calls of `std::get`.
+
+        // NOLINTNEXTLINE(bugprone-use-after-move)
         return make_table(std::get<Left>(std::move(data))...,
+                          // NOLINTNEXTLINE(bugprone-use-after-move)
                           std::get<Index>(std::move(data)).append(std::forward<T>(transition)),
+                          // NOLINTNEXTLINE(bugprone-use-after-move)
                           std::get<Right>(std::move(data))...);
     }
 
