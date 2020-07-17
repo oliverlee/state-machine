@@ -50,7 +50,7 @@ class Row {
     using data_type = std::tuple<T, Ts...>;
     static constexpr size_t size = 1 + sizeof...(Ts);
 
-    constexpr Row(T&& first, Ts&&... others) noexcept
+    constexpr explicit Row(T&& first, Ts&&... others) noexcept
         : data_{std::make_tuple(std::forward<T>(first), std::forward<Ts>(others)...)} {}
 
     constexpr auto data() const noexcept -> const data_type& { return data_; }
@@ -101,7 +101,7 @@ constexpr auto make_row(T&& first, Ts&&... others) noexcept {
     static_assert(stdx::conjunction<is_transition<Ts>...>::value,
                   "A `Row` must be composed of `Transition`s.");
 
-    return Row<T, Ts...>(std::forward<T>(first), std::forward<Ts>(others)...);
+    return Row<T, Ts...>{std::forward<T>(first), std::forward<Ts>(others)...};
 }
 
 template <class R>

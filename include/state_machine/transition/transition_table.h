@@ -24,7 +24,7 @@ constexpr auto make_table(R&& first, Rs&&... others) noexcept -> Table<R, Rs...>
     static_assert(is_row<R>::value, "A `Table` must be composed of `Row`s.");
     static_assert(stdx::conjunction<is_row<Rs>...>::value, "A `Table` must be composed of `Row`s.");
 
-    return {std::forward<R>(first), std::forward<Rs>(others)...};
+    return Table<R, Rs...>{std::forward<R>(first), std::forward<Rs>(others)...};
 }
 
 namespace detail {
@@ -51,7 +51,9 @@ constexpr auto from_transition_args_impl(
 template <class A1, class A2, class A3, class A4, class A5, class... Ts>
 constexpr auto make_table_from_transition_args(
     A1&& a1, A2&& a2, A3&& a3, A4&& a4, A5&& a5, Ts&&... args) noexcept {
-    static_assert(sizeof...(Ts) % 5 == 0, "The number of args must be a multiple of 5.");
+    constexpr std::size_t num_elems_in_row = 5;
+    static_assert(sizeof...(Ts) % num_elems_in_row == 0,
+                  "The number of args must be a multiple of 5.");
 
     return detail::from_transition_args_impl(
         make_table(make_row(make_transition(std::forward<A1>(a1),
@@ -98,7 +100,7 @@ class Table {
     using data_type = std::tuple<R, Rs...>;
     static constexpr size_t size = 1 + sizeof...(Rs);
 
-    constexpr Table(R&& first, Rs&&... others) noexcept
+    constexpr explicit Table(R&& first, Rs&&... others) noexcept
         : data_{std::make_tuple(std::forward<R>(first), std::forward<Rs>(others)...)} {}
 
     constexpr auto data() const noexcept -> const data_type& { return data_; }
@@ -109,7 +111,7 @@ class Table {
     constexpr auto update(T&& transition) && noexcept {
         static_assert(is_transition<T>::value, "Argument to `update` must be a `Transition`.");
 
-        return std::move(*this).update_impl(std::move(transition),
+        return std::move(*this).update_impl(std::forward<T>(transition),
                                             std::make_index_sequence<size>{});
     }
 
