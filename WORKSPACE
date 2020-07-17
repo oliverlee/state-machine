@@ -3,9 +3,9 @@ local_repository(
     path = "extern/googletest",
 )
 
-load(":configure_copts.bzl", "configure_compiler_copts")
-configure_compiler_copts(
-    name = "generated_compiler_config",
+load(":configure.bzl", "configure_local_variables")
+configure_local_variables(
+    name = "local_config",
     variable_template = "//:variables.bzl.tpl",
 )
 

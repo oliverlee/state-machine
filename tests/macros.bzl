@@ -1,4 +1,4 @@
-load("@generated_compiler_config//:variables.bzl", "STATE_MACHINE_DEFAULT_COPTS")
+load("@local_config//:variables.bzl", "STATE_MACHINE_DEFAULT_COPTS")
 
 def add_unit_test(name, **kwargs):
     """Add a unit test with default options.
