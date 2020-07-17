@@ -26,7 +26,7 @@ but allow transfer between states (e.g. moving a buffer from a 'read' state to a
 Check out the [examples](./examples).
 
 In order to build the examples, you'll need a compiler supporting C++14 and
-[CMake](https://cmake.org/).
+[CMake](https://cmake.org/) or [Bazel](https://bazel.build/).
 
 [Google Test](https://github.com/google/googletest) is required to run the
 tests and is included as a submodule. Make sure to initialize it after cloning
