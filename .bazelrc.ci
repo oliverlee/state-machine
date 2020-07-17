@@ -6,5 +6,8 @@ build --show_timestamps
 build --announce_rc
 build --color=yes
 build --disk_cache='~/.cache/bazel/'
+build --show_task_finish
+build --terminal_columns=120
 
 test --test_output=all
+test --test_verbose_timeout_warnings
