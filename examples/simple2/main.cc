@@ -39,7 +39,7 @@ struct stop {};
 struct pause {};
 struct end_pause {};
 struct cd_detected {
-    constexpr cd_detected(DiskType diskType) : disc_type(diskType) {}
+    constexpr explicit cd_detected(DiskType diskType) : disc_type(diskType) {}
 
     DiskType disc_type;
 };
@@ -115,7 +115,7 @@ struct Player : player::StateMachine {
 
 } // namespace
 
-int main() {
+auto main() -> int {
     // The state machine starts as soon as it is created.
     auto p = Player{};
     assert(p.is_state<Empty>());

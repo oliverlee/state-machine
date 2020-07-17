@@ -38,7 +38,7 @@ struct stop {};
 struct pause {};
 struct end_pause {};
 struct cd_detected {
-    cd_detected(DiskType diskType) : disc_type(diskType) {}
+    explicit cd_detected(DiskType diskType) : disc_type(diskType) {}
 
     DiskType disc_type;
 };
@@ -107,7 +107,7 @@ auto table() {
 }
 } // namespace
 
-int main() {
+auto main() -> int {
     // The state machine starts as soon as it is created.
     auto p = sm::make_state_machine(table());
     assert(p.is_state<Empty>());

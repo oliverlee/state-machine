@@ -33,11 +33,13 @@ lint_sources(
     dependencies = ["//:state_machine"],
     options = (
         "-checks=\""
+        + "-bugprone-exception-escape,"
         + "-cppcoreguidelines-interfaces-global-init,"
         + "-cppcoreguidelines-pro-bounds-array-to-pointer-decay,"
         + "-fuchsia-statically-constructed-objects,"
-        + "-readability-named-parameter,"
         + "-hicpp-no-array-decay,"
+        + "-misc-non-private-member-variables-in-classes,"
+        + "-readability-named-parameter,"
         + "-readability-convert-member-functions-to-static,"
         + "\""
     ),
