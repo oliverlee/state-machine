@@ -15,7 +15,11 @@ Checks: >-
     -openmp-*,
     -zircon-temporary-objects,
     # aliases,
+    -hicpp-explicit-conversions,
+    -hicpp-member-init,
     -hicpp-noexcept-move,
+    -hicpp-special-member-functions,
+    -hicpp-use-equals-default,
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '^include'

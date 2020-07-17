@@ -18,8 +18,12 @@ static constexpr nullopt_t nullopt{0};
 template <class T>
 class optional_base {
   public:
-    constexpr optional_base() noexcept : dummy_{}, has_value_{false} {}
-    constexpr optional_base(nullopt_t) noexcept : dummy_{}, has_value_{false} {}
+    // clang-tidy complains that data_ is not initialized with `= default`
+    // NOLINTNEXTLINE(modernize-use-equals-default)
+    constexpr optional_base() noexcept {}
+
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    constexpr optional_base(nullopt_t) noexcept {}
 
     template <class... Args, std::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0>
     constexpr explicit optional_base(Args&&... args) noexcept(noexcept(T{
@@ -27,69 +31,79 @@ class optional_base {
         : data_{std::forward<Args>(args)...}, has_value_{true} {}
 
     template <class U = T>
-    optional_base& operator=(U&& value) {
+    auto operator=(U&& value) -> optional_base& {
         has_value_ = false;
+
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         data_ = T{std::forward<U>(value)};
+
         has_value_ = true;
     }
 
-    optional_base& operator=(nullopt_t) noexcept { has_value_ = false; }
+    auto operator=(nullopt_t) noexcept -> optional_base& { has_value_ = false; }
 
-    constexpr bool has_value() const noexcept { return has_value_; }
+    constexpr auto has_value() const noexcept -> bool { return has_value_; }
 
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
-    constexpr const T* operator->() const {
-        if (!bool(*this)) {
-            throw bad_optional_access{};
-        }
+    constexpr auto operator->() const -> const T* {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return &data_;
     }
-    constexpr T* operator->() {
+    constexpr auto operator->() -> T* {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return &data_;
     }
-    constexpr const T& operator*() const& {
+    constexpr auto operator*() const& -> const T& {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return data_;
     }
-    constexpr T& operator*() & {
+    constexpr auto operator*() & -> T& {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return data_;
     }
-    constexpr const T&& operator*() const&& {
+    constexpr auto operator*() const&& -> const T&& {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return std::move(data_);
     }
-    constexpr T&& operator*() && {
+    constexpr auto operator*() && -> T&& {
         throw_if_empty();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         return std::move(data_);
     }
 
-    constexpr T& value() & { return **this; }
+    constexpr auto value() & -> T& { return **this; }
 
-    constexpr const T& value() const& { return **this; }
+    constexpr auto value() const& -> const T& { return **this; }
 
-    constexpr T&& value() &&;
-    constexpr const T&& value() const&& { return std::move(**this); }
+    constexpr auto value() && -> T&& { return std::move(**this); }
+
+    constexpr auto value() const&& -> const T&& { return std::move(**this); }
 
     template <class U>
-    constexpr T value_or(U&& default_value) const& {
+    constexpr auto value_or(U&& default_value) const& -> T {
         return bool(*this) ? **this : static_cast<T>(std::forward<U>(default_value));
     }
 
     template <class U>
-    constexpr T value_or(U&& default_value) && {
+    constexpr auto value_or(U&& default_value) && -> T {
         return bool(*this) ? std::move(**this) : static_cast<T>(std::forward<U>(default_value));
     }
 
     void reset() noexcept { has_value_ = false; }
 
     template <class... Args>
-    T& emplace(Args&&... args) {
+    auto emplace(Args&&... args) -> T& {
         has_value_ = false;
+
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access)
         data_ = T{std::forward<Args>(args)...};
+
         has_value_ = true;
     }
 
@@ -102,9 +116,9 @@ class optional_base {
 
     union {
         T data_;
-        char dummy_;
+        char dummy_ = {};
     };
-    bool has_value_;
+    bool has_value_ = {false};
 };
 
 
@@ -113,15 +127,27 @@ class optional : public optional_base<T> {
   public:
     using optional_base<T>::optional_base;
 
+    // Default constructors/assignment operators will be noexcept if possible.
+
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+    optional(optional&&) = default;
+
+    optional(const optional&) = default;
+
+    // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+    auto operator=(optional &&) -> optional& = default;
+
+    auto operator=(const optional&) -> optional& = default;
+
     ~optional() { destroy(); }
 
     template <class U = T>
-    optional& operator=(U&& value) {
+    auto operator=(U&& value) -> optional& {
         destroy();
         optional_base<T>::operator=(std::forward<U>(value));
     }
 
-    optional& operator=(nullopt_t) noexcept {
+    auto operator=(nullopt_t) noexcept -> optional& {
         destroy();
         optional_base<T>::operator=(nullopt);
     }
@@ -132,7 +158,7 @@ class optional : public optional_base<T> {
     }
 
     template <class... Args>
-    T& emplace(Args&&... args) {
+    auto emplace(Args&&... args) -> T& {
         destroy();
         optional_base<T>::emplace(std::forward<Args>(args)...);
     }
