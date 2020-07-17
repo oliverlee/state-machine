@@ -1,4 +1,7 @@
+load("@local_config//:bazel_info.bzl", "BAZEL_OUTPUT_BASE")
+load("@com_grail_compdb//:aspects.bzl", "compilation_database")
 load("//tests:macros.bzl", "add_unit_test")
+load("//lint:macros.bzl", "lint_sources")
 
 add_unit_test("test_backport")
 add_unit_test("test_traits")
@@ -7,3 +10,39 @@ add_unit_test("test_transition_row")
 add_unit_test("test_transition_table")
 add_unit_test("test_state_machine")
 add_unit_test("test_variant")
+
+compilation_database(
+    name = "compdb",
+    targets = [
+        ":test_backport",
+        ":test_traits",
+        ":test_containers",
+        ":test_transition_row",
+        ":test_transition_table",
+        ":test_state_machine",
+        ":test_variant",
+    ],
+    exec_root = BAZEL_OUTPUT_BASE + "execroot/__main__",
+    testonly = True,
+)
+
+lint_sources(
+    name = "lint",
+    sources = glob(["test_*.cc"]),
+    compdb = ":compdb",
+    dependencies = ["//:state_machine"],
+    options = (
+        "-checks=\""
+        + "-cert-err58-cpp,"
+        + "-cppcoreguidelines-special-member-functions,"
+        + "-cppcoreguidelines-avoid-goto,"
+        + "-cppcoreguidelines-owning-memory,"
+        + "-fuchsia-statically-constructed-objects,"
+        + "-google-build-using-namespace,"
+        + "-google-readability-avoid-underscore-in-googletest-name,"
+        + "-misc-non-private-member-variables-in-classes,"
+        + "-modernize-use-trailing-return-type,"
+        + "-readability-magic-numbers,"
+        + "\""
+    ),
+)

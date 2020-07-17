@@ -39,7 +39,6 @@ lint_sources(
         + "-fuchsia-statically-constructed-objects,"
         + "-hicpp-no-array-decay,"
         + "-misc-non-private-member-variables-in-classes,"
-        + "-readability-named-parameter,"
         + "-readability-convert-member-functions-to-static,"
         + "\""
     ),
