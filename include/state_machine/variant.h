@@ -57,15 +57,22 @@ class Variant {
     auto operator=(const Variant&) -> Variant& = delete;
 
     Variant(Variant&& rhs) noexcept(
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor)
         stdx::conjunction<std::is_nothrow_move_constructible<Ts>...>::value) {
         if (!rhs.holds<empty>()) {
             on_alternate<op::pop_front<op::repack<alternative_index_map, bijection>>>::invoke(
-                rhs,
-                [this](auto& s) { this->set<std::remove_reference_t<decltype(s)>>(std::move(s)); });
+                rhs, [this](auto& s) {
+                    using state_type = std::remove_reference_t<decltype(s)>;
+                    if (std::is_nothrow_move_constructible<state_type>::value) {
+                        this->set<state_type>(std::move(s));
+                    }
+                });
         }
     }
 
+    // NOLINTNEXTLINE(bugprone-exception-escape)
     auto operator=(Variant&& rhs) noexcept(
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor)
         stdx::conjunction<std::is_nothrow_move_assignable<Ts>...>::value) -> Variant& {
         if (rhs.holds<empty>()) {
             this->emplace<empty>();

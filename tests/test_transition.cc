@@ -16,7 +16,7 @@ struct s2 {};
 
 struct e1 {};
 struct e2 {
-    e2(int x) : value{x} {}
+    explicit e2(int x) : value{x} {}
     int value;
 };
 

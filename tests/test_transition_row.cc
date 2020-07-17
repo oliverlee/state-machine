@@ -8,7 +8,6 @@
 namespace {
 using ::state_machine::event;
 using ::state_machine::state;
-using ::state_machine::placeholder::_;
 
 using ::state_machine::transition::make_row;
 using ::state_machine::transition::make_transition;
@@ -18,7 +17,7 @@ struct s2 {};
 struct s3 {};
 
 struct e1 {
-    e1(int x) : value{x} {}
+    explicit e1(int x) : value{x} {}
     int value;
 };
 
