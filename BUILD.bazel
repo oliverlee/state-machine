@@ -9,3 +9,5 @@ cc_library(
         "//tests:__pkg__"
     ],
 )
+
+exports_files([".clang-tidy"], visibility=["//:__subpackages__"])

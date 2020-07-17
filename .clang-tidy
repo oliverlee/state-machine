@@ -1,0 +1,19 @@
+Checks: >-
+    *,
+    -android-*,
+    -clang-analyzer-osx.*,
+    -darwin-*,
+    -fuchsia-multiple-inheritance,
+    -fuchsia-overloaded-operator,
+    -fuchsia-trailing-return,
+    -google-objc-*,
+    -llvm-header-guard,
+    -llvm-prefer-*,
+    -llvm-twine-local,
+    -mpi-*,
+    -objc-*,
+    -openmp-*,
+    -zircon-temporary-objects,
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '^include'
