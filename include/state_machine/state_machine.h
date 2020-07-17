@@ -55,7 +55,7 @@ static auto on_exit(T& t) noexcept(noexcept(std::declval<T>().on_exit())) -> voi
 
 template <class Table, class... Args>
 constexpr auto make_state_machine(Table&& table, Args&&... args) -> StateMachine<Table> {
-    return {std::forward<Table>(table), std::forward<Args>(args)...};
+    return StateMachine<Table>{std::forward<Table>(table), std::forward<Args>(args)...};
 }
 
 // The type of exception thrown if `StateMachine::process_event` is called with an invalid internal
@@ -67,6 +67,7 @@ enum process_status : uint8_t { Completed, EventIgnored, GuardFailure, Undefined
 
 template <class Table>
 class StateMachine {
+  public:
     static_assert(transition::is_table<std::decay_t<Table>>::value,
                   "A `StateMachine` must be created from a `Table`");
 
@@ -75,22 +76,30 @@ class StateMachine {
                                      std::true_type>::value,
                   "When using a Table reference, that Table must be const.");
 
-  public:
     using type = StateMachine<Table>;
     using state_types = typename std::decay_t<Table>::state_types;
     using event_types = typename std::decay_t<Table>::event_types;
     using initial_state_type =
         typename std::tuple_element_t<0, typename std::decay_t<Table>::data_type>::source_type;
 
+    using variant_type = op::repack<state_types, Variant>;
+
     template <class... Args>
-    StateMachine(Table&& table, Args&&... args) : table_{std::forward<Table>(table)} {
+    explicit StateMachine(Table&& table, Args&&... args) : table_{std::forward<Table>(table)} {
         state_.template emplace<initial_state_type>(std::forward<Args>(args)...);
         state_.visit([](auto&& s) { detail::on_entry(std::forward<decltype(s)>(s)); });
     }
 
-    StateMachine(StateMachine&&) = default;
-    auto operator=(StateMachine &&) -> StateMachine& = default;
+    StateMachine(StateMachine&&) noexcept(std::is_nothrow_move_constructible<variant_type>::value) =
+        default;
+    auto operator=(StateMachine&&) noexcept(std::is_nothrow_move_assignable<variant_type>::value)
+        -> StateMachine& = default;
 
+    StateMachine(const StateMachine&) = delete;
+    auto operator=(const StateMachine&) -> StateMachine& = delete;
+
+    // Destructors of user-defined state types may throw
+    // NOLINTNEXTLINE(bugprone-exception-escape)
     ~StateMachine() {
         state_.visit([](auto&& s) { detail::on_exit(std::forward<decltype(s)>(s)); });
     }
@@ -114,9 +123,6 @@ class StateMachine {
     }
 
   private:
-    using variant_type = op::repack<state_types, Variant>;
-    using index_type = typename variant_type::index_type;
-
     struct transition_not_found {};
 
     template <class Event>
