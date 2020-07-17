@@ -89,8 +89,8 @@ jobs:
     - name: Build and Test (Bazel)
       if: matrix.build_tool == 'bazel'
       run: |
-        bazel build //examples:all
-        bazel test //...
+        bazel build //examples/...
+        bazel test //tests/...
 
   format:
     runs-on: ubuntu-20.04
@@ -135,3 +135,63 @@ jobs:
       with:
         file: ./build/coverage.info
         fail_ci_if_error: true
+
+  lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        compiler: [clang]
+        build_tool: [bazel]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get install -y clang-tidy-10
+          clang-tidy-10 --version
+
+      - id: cache-bazel-install
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/bin/bazel*
+            ~/.bazel
+          key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}
+
+      - id: cache-bazel-out
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ matrix.os }}-bazel-${{ env.BAZEL_VERSION }}-${{ matrix.compiler }}
+
+      - name: Setup Bazel
+        run: |
+          if [[ "${{ steps.cache-bazel-install.outputs.cache-hit }}" != 'true' ]]; then
+
+            if [[ "${{ matrix.os }}" == "macos"* ]]; then
+              OS=darwin
+            else
+              OS=linux
+            fi
+
+            URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${OS}-x86_64.sh"
+
+            wget -O install.sh "${URL}"
+            chmod +x install.sh
+            ./install.sh --user
+            rm -f install.sh
+          fi
+
+          cat .bazelrc.ci >> .bazelrc
+
+          echo "::set-env name=CC::/usr/lib/llvm-10/bin/clang++"
+
+      - name: Lint
+        run: |
+          bazel test $(bazel query 'attr(tags, "lint", tests(//...))')

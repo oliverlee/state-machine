@@ -196,7 +196,7 @@ struct guard_always {
 
 // An action that does nothing.
 struct action_pass {
-    constexpr auto operator()() const noexcept -> void { return; }
+    constexpr auto operator()() const noexcept -> void {}
 };
 
 template <class T>

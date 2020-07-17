@@ -14,9 +14,11 @@ constexpr auto _ = transition::empty_placeholder;
 } // namespace placeholder
 
 template <class T>
+// NOLINTNEXTLINE(misc-definitions-in-headers)
 constexpr auto state = transition::State<T>{};
 
 template <class E>
+// NOLINTNEXTLINE(misc-definitions-in-headers)
 constexpr auto event = transition::Event<E>{};
 
 template <class... Ts>

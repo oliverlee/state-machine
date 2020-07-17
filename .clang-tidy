@@ -1,0 +1,25 @@
+Checks: >-
+    *,
+    -android-*,
+    -clang-analyzer-osx.*,
+    -darwin-*,
+    -fuchsia-multiple-inheritance,
+    -fuchsia-overloaded-operator,
+    -fuchsia-trailing-return,
+    -google-objc-*,
+    -llvm-header-guard,
+    -llvm-prefer-*,
+    -llvm-twine-local,
+    -mpi-*,
+    -objc-*,
+    -openmp-*,
+    -zircon-temporary-objects,
+    # aliases,
+    -hicpp-explicit-conversions,
+    -hicpp-member-init,
+    -hicpp-noexcept-move,
+    -hicpp-special-member-functions,
+    -hicpp-use-equals-default,
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '^include'
