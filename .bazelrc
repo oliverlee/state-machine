@@ -3,12 +3,12 @@ build --verbose_failures
 build --show_result='100'
 build --action_env=CC
 build --action_env='BAZEL_USE_CPP_ONLY_TOOLCHAIN=1'
+build --action_env='GTEST_COLOR=1'
 
 test --keep_going
 test --build_tests_only
 test --test_output=errors
 test --test_summary=detailed
-test --action_env='GTEST_COLOR=1'
 
 coverage -c dbg
 coverage --instrumentation_filter=''
