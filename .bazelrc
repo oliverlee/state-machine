@@ -22,4 +22,8 @@ coverage --cxxopt='-fno-default-inline'
 coverage --cxxopt='-fno-elide-constructors'
 coverage --cxxopt='-fkeep-inline-functions'
 
+build:clang_config --crosstool_top=//toolchain:clang_suite
+build:clang_config --cpu=k8
+build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+
 try-import %workspace%/user.bazelrc
