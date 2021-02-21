@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 
 namespace state_machine {
@@ -18,7 +19,106 @@ namespace op = ::state_machine::containers::op;
 
 using variant::bad_variant_access;
 
+template <std::size_t I>
+struct in_place_index_t {
+    explicit in_place_index_t() = default;
+};
 
+/// @brief Underlying storage for a variant
+template <class T0, class... Ts>
+struct storage {
+    static constexpr std::size_t index = sizeof...(Ts);
+    using element_type = T0;
+
+    static_assert(index > 0, "");
+
+    constexpr storage() noexcept : alternatives_{} {}
+
+    template <class... Args>
+    constexpr storage(in_place_index_t<index>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<element_type, Args...>::value)
+        : value_{std::forward<Args>(args)...} {}
+
+    constexpr auto get(in_place_index_t<index>) noexcept -> element_type& { return value_; }
+    constexpr auto get(in_place_index_t<index>) const noexcept -> const element_type& {
+        return value_;
+    }
+
+    template <class Callable>
+    constexpr auto invoke_on(in_place_index_t<index>, Callable&& callable)
+        -> decltype(std::declval<Callable>()(std::declval<element_type&>())) {
+        return callable(value_);
+    }
+    template <class Callable>
+    constexpr auto invoke_on(in_place_index_t<index>, Callable&& callable) const
+        -> decltype(std::declval<Callable>()(std::declval<const element_type&>())) {
+        return callable(value_);
+    }
+
+    template <std::size_t I>
+    constexpr decltype(auto) get(in_place_index_t<I>) noexcept {
+        return alternatives_.get(in_place_index_t<I>{});
+    }
+    template <std::size_t I>
+    constexpr decltype(auto) get(in_place_index_t<I>) const noexcept {
+        return alternatives_.get(in_place_index_t<I>{});
+    }
+
+    template <std::size_t I, class Callable>
+    constexpr auto invoke_on(in_place_index_t<I>, Callable&& callable)
+        -> decltype(std::declval<Callable>()(std::declval<element_type&>())) {
+        return alternatives_.invoke_on(in_place_index_t<I>{}, std::forward<Callable>(callable));
+    }
+    template <std::size_t I, class Callable>
+    constexpr auto invoke_on(in_place_index_t<I>, Callable&& callable) const
+        -> decltype(std::declval<Callable>()(std::declval<const element_type&>())) {
+        return alternatives_.invoke_on(in_place_index_t<I>{}, std::forward<Callable>(callable));
+    }
+
+  private:
+    union {
+        element_type value_;
+        storage<Ts...> alternatives_;
+    };
+};
+
+template <class T>
+struct storage<T> {
+    static constexpr std::size_t index = 0;
+    using element_type = T;
+
+    constexpr storage() noexcept(std::is_nothrow_constructible<T>::value) : value_{} {}
+
+    template <class... Args>
+    constexpr storage(in_place_index_t<index>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<element_type, Args...>::value)
+        : value_{std::forward<Args>(args)...} {}
+
+    constexpr auto get(in_place_index_t<index>) noexcept -> element_type& { return value_; }
+    constexpr auto get(in_place_index_t<index>) const noexcept -> const element_type& {
+        return value_;
+    }
+
+    template <class Callable>
+    constexpr auto invoke_on(in_place_index_t<index>, Callable&& callable)
+        -> decltype(std::declval<Callable>()(std::declval<element_type&>())) {
+        return callable(value_);
+    }
+    template <class Callable>
+    constexpr auto invoke_on(in_place_index_t<index>, Callable&& callable) const
+        -> decltype(std::declval<Callable>()(std::declval<const element_type&>())) {
+        return callable(value_);
+    }
+
+  private:
+    union {
+        element_type value_;
+        char dummy_;
+    };
+};
+
+
+/// @brief A helper type for creating overloaded visitors
 template <class T0, class... Ts>
 struct overload : T0, overload<Ts...> {
     using T0::operator();
@@ -40,93 +140,66 @@ auto make_overload(Ts&&... ts) -> overload<Ts...> {
     return overload<Ts...>{std::forward<Ts>(ts)...};
 }
 
+template <class T, class Tuple>
+struct Index;
+
+template <class T, class... Types>
+struct Index<T, std::tuple<T, Types...>> {
+    static const std::size_t value = 0;
+};
+
+template <class T, class U, class... Types>
+struct Index<T, std::tuple<U, Types...>> {
+    static const std::size_t value = 1 + Index<T, std::tuple<Types...>>::value;
+};
+
 
 template <class... Ts>
 class variant {
-    using index_type = uint8_t;
-
-  public:
-    using alternative_map = index_map<Ts...>;
-
-    // Number of alternative types
-    static constexpr size_t size = sizeof...(Ts);
-
-    static_assert(stdx::conjunction<aux::is_copy_or_move_constructible<Ts>...>::value,
-                  "Variant can only contain types that are copy or move constructible.");
-    static_assert(stdx::conjunction<std::is_destructible<Ts>...>::value,
-                  "Variant can only contain types that are destructible.");
-    static_assert(!stdx::disjunction<std::is_reference<Ts>...>::value,
-                  "Variant cannot contain reference types.");
-    static_assert(!stdx::disjunction<std::is_array<Ts>...>::value,
-                  "Variant cannot contain array types.");
-    static_assert(sizeof...(Ts) <= std::numeric_limits<variant::index_type>::max(),
-                  "Number of template type parameters exceeds Variant maximum.");
-
-  private:
     using type = variant;
-    using storage_type = std::aligned_union_t<0, Ts...>;
-
-    template <class T, class R = void>
-    using enable_if_key_t = std::enable_if_t<alternative_map::template contains_key<T>::value, R>;
-
-    using T0 = typename alternative_map::template at_value<aux::index_constant<0>>;
+    using index_type = uint8_t;
+    using storage_type = storage<Ts...>;
+    using alternative_types = std::tuple<Ts...>;
 
     storage_type storage_ = {};
     index_type index_ = 0;
 
+  public:
+    // Number of alternative types
+    static constexpr size_t size = sizeof...(Ts);
+
+    static_assert(stdx::conjunction<aux::is_copy_or_move_constructible<Ts>...>::value,
+                  "variant can only contain types that are copy or move constructible.");
+    static_assert(stdx::conjunction<std::is_destructible<Ts>...>::value,
+                  "ariant can only contain types that are destructible.");
+    static_assert(!stdx::disjunction<std::is_reference<Ts>...>::value,
+                  "variant cannot contain reference types.");
+    static_assert(!stdx::disjunction<std::is_array<Ts>...>::value,
+                  "variant cannot contain array types.");
+    static_assert(sizeof...(Ts) <= std::numeric_limits<variant::index_type>::max(),
+                  "Number of template type parameters exceeds variant maximum.");
+
+  private:
     template <class T>
     static constexpr auto alternative_index() noexcept -> index_type {
-        return static_cast<index_type>(alternative_map::template at_key<T>::value);
-    }
-
-    template <class T, class Self>
-    static auto get_if_impl(Self self) noexcept
-        -> std::conditional_t<std::is_const<std::remove_pointer_t<Self>>::value, const T*, T*> {
-        if (self->template holds_alternative<T>()) {
-            using C =
-                std::conditional_t<std::is_const<std::remove_pointer_t<Self>>::value, const T, T>;
-            return reinterpret_cast<C*>(&self->storage_);
-        }
-
-        return nullptr;
-    }
-    template <std::size_t I, class Self>
-    static auto get_if_impl(Self self) noexcept {
-        using T = typename alternative_map::template at_value<aux::index_constant<I>>;
-        return get_if_impl<T>(self);
-    }
-
-    template <class T, class Self>
-    static decltype(auto) get_impl(Self self) {
-        auto* p = get_if_impl<T>(self);
-
-        if (p == nullptr) {
-            throw bad_variant_access{};
-        }
-
-        return *p;
-    }
-    template <std::size_t I, class Self>
-    static decltype(auto) get_impl(Self self) {
-        using T = typename alternative_map::template at_value<aux::index_constant<I>>;
-        return get_impl<T>(self);
+        return Index<T, alternative_types>::value;
     }
 
     template <class Self, class Callable, std::size_t I0>
     static auto on_alternate_impl(Self self, Callable&& callable, std::index_sequence<I0>) {
-        return callable(*get_if_impl<0>(self));
+        return self->storage_.invoke_on(in_place_index_t<0>{}, std::forward<Callable>(callable));
     }
+
     template <class Self, class Callable, std::size_t I0, std::size_t I1, std::size_t... Is>
     static auto
     on_alternate_impl(Self self, Callable&& callable, std::index_sequence<I0, I1, Is...>) {
-        constexpr auto i = sizeof...(Is) + 1;
+        constexpr auto I = sizeof...(Is) + 1;
 
-        auto* p = get_if_impl<i>(self);
-
-        return (p != nullptr) ? callable(*p) :
-                                on_alternate_impl<Self, Callable>(self,
-                                                                  std::forward<Callable>(callable),
-                                                                  std::make_index_sequence<i>{});
+        return (self->index() == I) ? self->storage_.invoke_on(in_place_index_t<I>{},
+                                                               std::forward<Callable>(callable)) :
+                                      on_alternate_impl(self,
+                                                        std::forward<Callable>(callable),
+                                                        std::make_index_sequence<I>{});
     }
 
     template <class Self, class Callable>
@@ -135,41 +208,52 @@ class variant {
             self, std::forward<Callable>(callable), std::make_index_sequence<size>{});
     }
 
-    auto destroy_alternative() noexcept -> void {
+    auto destroy_alternative() noexcept {
         on_alternate(this, [](auto& v) {
             using T = std::remove_reference_t<decltype(v)>;
             v.~T();
         });
     }
 
-  public:
-    variant() noexcept(std::is_nothrow_default_constructible<T0>::value) : index_{0} {
-        (void)(new (&storage_) T0{});
+    template <class T, class Self>
+    static constexpr auto get_impl(Self self)
+        -> std::conditional_t<std::is_const<std::remove_pointer_t<Self>>::value, const T&, T&> {
+        constexpr auto I = alternative_index<T>();
+
+        if (self->index() != I) {
+            throw bad_variant_access{};
+        }
+
+        static_assert(std::is_same<T, std::tuple_element_t<I, alternative_types>>::value, "");
+        return self->storage_.get(in_place_index_t<I>{});
     }
+
+  public:
+    constexpr variant() = default;
 
     ~variant() noexcept { destroy_alternative(); }
 
     constexpr auto index() const noexcept -> index_type { return index_; }
 
     template <class T>
-    auto holds_alternative() const noexcept -> enable_if_key_t<T, bool> {
+    auto holds_alternative() const noexcept -> bool {
         return alternative_index<T>() == index();
     }
 
     template <class T>
-    auto get() & -> enable_if_key_t<T, T&> {
+    auto get() & -> T& {
         return get_impl<T>(this);
     }
     template <class T>
-    auto get() const& -> enable_if_key_t<T, const T&> {
+    auto get() const& -> const T& {
         return get_impl<T>(this);
     }
     template <class T>
-    auto get() && -> enable_if_key_t<T, T&&> {
+    auto get() && -> T&& {
         return std::move(get<T>());
     }
     template <class T>
-    auto get() const&& -> enable_if_key_t<T, const T&&> {
+    auto get() const&& -> const T&& {
         return std::move(get<T>());
     }
 
@@ -195,11 +279,11 @@ class variant {
 
     template <class... Overloads, class = std::enable_if_t<(sizeof...(Overloads) > 1)>>
     auto visit(Overloads&&... overloads) {
-        return on_alternate(this, make_overload(std::forward<Overloads>(overloads)...));
+        return visit(make_overload(std::forward<Overloads>(overloads)...));
     }
     template <class... Overloads, class = std::enable_if_t<(sizeof...(Overloads) > 1)>>
     auto visit(Overloads&&... overloads) const {
-        return on_alternate(this, make_overload(std::forward<Overloads>(overloads)...));
+        return visit(make_overload(std::forward<Overloads>(overloads)...));
     }
 };
 
