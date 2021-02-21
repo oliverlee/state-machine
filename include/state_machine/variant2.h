@@ -18,6 +18,29 @@ namespace op = ::state_machine::containers::op;
 
 using variant::bad_variant_access;
 
+
+template <class T0, class... Ts>
+struct overload : T0, overload<Ts...> {
+    using T0::operator();
+    using overload<Ts...>::operator();
+
+    overload(T0&& t0, Ts&&... ts)
+        : T0{std::forward<T0>(t0)}, overload<Ts...>{std::forward<Ts>(ts)...} {}
+};
+
+template <class T>
+struct overload<T> : T {
+    using T::operator();
+
+    overload(T&& t) : T{std::forward<T>(t)} {}
+};
+
+template <class... Ts>
+auto make_overload(Ts&&... ts) -> overload<Ts...> {
+    return overload<Ts...>{std::forward<Ts>(ts)...};
+}
+
+
 template <class... Ts>
 class variant {
     using index_type = uint8_t;
@@ -168,6 +191,15 @@ class variant {
     template <class Callable>
     auto visit(Callable&& callable) const {
         return on_alternate(this, std::forward<Callable>(callable));
+    }
+
+    template <class... Overloads, class = std::enable_if_t<(sizeof...(Overloads) > 1)>>
+    auto visit(Overloads&&... overloads) {
+        return on_alternate(this, make_overload(std::forward<Overloads>(overloads)...));
+    }
+    template <class... Overloads, class = std::enable_if_t<(sizeof...(Overloads) > 1)>>
+    auto visit(Overloads&&... overloads) const {
+        return on_alternate(this, make_overload(std::forward<Overloads>(overloads)...));
     }
 };
 
