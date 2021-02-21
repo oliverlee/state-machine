@@ -11,3 +11,7 @@ add_example_executable(simple1
 add_example_executable(simple2
     simple2/main.cc
 )
+
+add_example_executable(visit
+    visit.cc
+)
