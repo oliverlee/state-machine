@@ -14,4 +14,9 @@ int main() {
     v.visit([](int& x) { std::cout << "int " << x << std::endl; },
             [](double& x) { std::cout << "double " << x << std::endl; },
             [](char& x) { std::cout << "char " << x << std::endl; });
+
+    constexpr auto v2 = variant<double, char>{};
+    constexpr auto d = v2.get<double>();
+
+    std::cout << "d: " << d << std::endl;
 }

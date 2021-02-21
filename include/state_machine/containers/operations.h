@@ -172,6 +172,30 @@ struct pop_front_impl<L<T, Ts...>> : L<Ts...> {};
 template <class L>
 using pop_front = typename detail::pop_front_impl<L>::type;
 
+
+namespace detail {
+
+template <class L>
+struct reverse_impl_input;
+template <class L1, class L2>
+struct reverse_impl;
+
+template <template <class...> class L, class... Ts>
+struct reverse_impl_input<L<Ts...>> : reverse_impl<L<>, L<Ts...>> {};
+
+template <template <class...> class L, class... Rs, class T, class... Ts>
+struct reverse_impl<L<Rs...>, L<T, Ts...>> : reverse_impl<L<T, Rs...>, L<Ts...>> {};
+
+template <template <class...> class L, class... Rs>
+struct reverse_impl<L<Rs...>, L<>> {
+    using type = L<Rs...>;
+};
+
+} // namespace detail
+
+template <class L>
+using reverse = typename detail::reverse_impl_input<L>::type;
+
 } // namespace operations
 } // namespace containers
 } // namespace state_machine
