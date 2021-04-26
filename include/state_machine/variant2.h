@@ -145,6 +145,16 @@ struct nontrivial_storage<T0, Ts...> : get_index<T0, nontrivial_storage<T0, Ts..
     constexpr nontrivial_storage() noexcept(std::is_nothrow_default_constructible<U>::value)
         : data_{} {}
 
+    template <class... Args>
+    constexpr nontrivial_storage(in_place_index_t<0>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<T0, Args...>::value)
+        : data_{std::forward<Args>(args)...} {}
+
+    template <std::size_t I, class... Args>
+    constexpr nontrivial_storage(in_place_index_t<I>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<nontrivial_storage<Ts...>, Args...>::value)
+        : alternatives_{in_place_index<I - 1>, std::forward<Args>(args)...} {}
+
     ~nontrivial_storage() {}
 
     union {
@@ -161,6 +171,16 @@ struct trivial_storage<T0, Ts...> : get_index<T0, trivial_storage<T0, Ts...>> {
     template <class U = T0, class = std::enable_if_t<std::is_default_constructible<U>::value>>
     constexpr trivial_storage() noexcept(std::is_nothrow_default_constructible<U>::value)
         : data_{} {}
+
+    template <class... Args>
+    constexpr trivial_storage(in_place_index_t<0>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<T0, Args...>::value)
+        : data_{std::forward<Args>(args)...} {}
+
+    template <std::size_t I, class... Args>
+    constexpr trivial_storage(in_place_index_t<I>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<trivial_storage<Ts...>, Args...>::value)
+        : alternatives_{in_place_index<I - 1>, std::forward<Args>(args)...} {}
 
     union {
         T0 data_;
@@ -194,6 +214,13 @@ struct storage
     using base_type::base_type;
 
     static constexpr auto size = sizeof...(Ts);
+
+    constexpr storage() = default;
+
+    template <std::size_t I, class... Args>
+    constexpr storage(in_place_index_t<I>, Args&&... args) noexcept(
+        std::is_nothrow_constructible<base_type, Args...>::value)
+        : base_type{in_place_index<I>, std::forward<Args>(args)...}, index_{I} {}
 
     constexpr auto index() const noexcept { return index_; }
 

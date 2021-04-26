@@ -20,4 +20,16 @@ int main() {
     constexpr auto d = v2.get<double>();
 
     std::cout << "d: " << d << std::endl;
+
+    {
+        constexpr auto v3 = variant<char, double>{in_place_index<1>, 3.14};
+        std::cout << "holds double? " << v3.holds_alternative<double>() << std::endl;
+        std::cout << "double: " << v3.get<double>() << std::endl;
+    }
+
+    {
+        constexpr auto v3 = variant<double, char>{in_place_index<0>, 3.14};
+        std::cout << "holds double? " << v3.holds_alternative<double>() << std::endl;
+        std::cout << "double: " << v3.get<double>() << std::endl;
+    }
 }
