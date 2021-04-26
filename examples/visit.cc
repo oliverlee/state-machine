@@ -3,6 +3,7 @@
 #include <iostream>
 
 int main() {
+    using ::state_machine::variant2::in_place_index;
     using ::state_machine::variant2::variant;
     auto v = variant<int, double, char>{};
 

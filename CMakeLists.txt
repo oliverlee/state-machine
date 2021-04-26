@@ -18,7 +18,6 @@ set(COMMON_CXX_OPTIONS
     -Wpedantic
     -Wconversion
     -Wsign-conversion
-    -Wdouble-promotion
     -Wformat=2
 )
 

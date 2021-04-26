@@ -17,6 +17,13 @@ cc_binary(
     deps = ["//:state_machine"],
 )
 
+cc_binary(
+    name = "visit",
+    srcs = ["visit.cc"],
+    copts = STATE_MACHINE_DEFAULT_COPTS,
+    deps = ["//:state_machine"],
+)
+
 compilation_database(
     name = "compdb",
     targets = [

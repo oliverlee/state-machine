@@ -10,7 +10,6 @@ COMMON_CXX_WARN_OPTS = [
     "-Wpedantic",
     "-Wconversion",
     "-Wsign-conversion",
-    "-Wdouble-promotion",
     "-Wformat=2",
 ]
 

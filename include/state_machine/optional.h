@@ -135,7 +135,7 @@ class optional : public optional_base<T> {
     optional(const optional&) = default;
 
     // NOLINTNEXTLINE(performance-noexcept-move-constructor)
-    auto operator=(optional &&) -> optional& = default;
+    auto operator=(optional&&) -> optional& = default;
 
     auto operator=(const optional&) -> optional& = default;
 
