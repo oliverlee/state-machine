@@ -15,6 +15,7 @@ namespace state_machine {
 namespace variant2 {
 
 namespace op = containers::operations;
+using containers::basic::identity;
 using containers::basic::list;
 using variant::bad_variant_access;
 
@@ -29,6 +30,14 @@ template <class T>
 struct is_in_place_index_t : std::false_type {};
 template <std::size_t I>
 struct is_in_place_index_t<in_place_index_t<I>> : std::true_type {};
+
+template <class, class, class = void>
+struct non_narrowing_constructible : std::false_type {};
+template <class T, class U>
+struct non_narrowing_constructible<
+    T,
+    U,
+    stdx::void_t<decltype(typename identity<T[]>::type{std::declval<U>()})>> : std::true_type {};
 
 /// @brief A helper type for creating overloaded visitors
 template <class T0, class... Ts>
@@ -252,6 +261,21 @@ class variant : storage<Ts...> {
 
     template <std::size_t I>
     using alternative_type = std::tuple_element_t<I, alternative_types>;
+
+    template <class T,
+              bool ExactMatch = stdx::disjunction<std::is_same<T, Ts>...>::value,
+              bool ConvertingMatch = stdx::disjunction<std::is_convertible<Ts, T>...>::value,
+              class = std::enable_if_t<!std::is_same<variant, std::decay_t<T>>::value &&
+                                       !is_in_place_index_t<std::decay_t<T>>::value &&
+                                       (ExactMatch || ConvertingMatch)>>
+    constexpr variant(T&& t)
+        : variant{in_place_index<std::conditional_t<
+                      ExactMatch,
+                      index_of<T, std::tuple<Ts...>>,
+                      index_of<std::true_type,
+                               std::tuple<stdx::bool_constant<
+                                   non_narrowing_constructible<Ts, T>::value>...>>>::value>,
+                  std::forward<T>(t)} {}
 
   private:
     template <class T>

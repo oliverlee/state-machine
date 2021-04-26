@@ -32,4 +32,16 @@ int main() {
         std::cout << "holds double? " << v3.holds_alternative<double>() << std::endl;
         std::cout << "double: " << v3.get<double>() << std::endl;
     }
+
+    {
+        constexpr auto v3 = variant<char, double>{3.14};
+        std::cout << "holds double? " << v3.holds_alternative<double>() << std::endl;
+        std::cout << "double: " << v3.get<double>() << std::endl;
+    }
+
+    {
+        constexpr auto v3 = variant<char, double>{3.14F};
+        std::cout << "holds double? " << v3.holds_alternative<double>() << std::endl;
+        std::cout << "double: " << v3.get<double>() << std::endl;
+    }
 }
